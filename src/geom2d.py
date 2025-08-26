@@ -1,6 +1,6 @@
 import copy
 import math
-from fractions import Fraction
+from fractions import Fraction as Fr
 import matplotlib.pyplot as plt
 
 #===================================================================================================
@@ -18,28 +18,14 @@ class Point:
 
         Parameters
         ----------
-        x : number
+        x : number | Fraction
             x-coord.
-        y : number
+        y : number | Fraction
             y-coord.
         """
 
         self.x = x
         self.y = y
-
-    #-----------------------------------------------------------------------------------------------
-
-    def __copy__(self):
-        """
-        Copy constructor.
-
-        Returns
-        -------
-        Point
-            Copy point.
-        """
-
-        return Point(self.x, self.y)
 
     #-----------------------------------------------------------------------------------------------
 
@@ -181,7 +167,7 @@ class Point:
 
     #-----------------------------------------------------------------------------------------------
 
-    def draw(self, plt):
+    def draw(self, plt, color='black', size=20):
         """
         Draw on plot.
 
@@ -189,9 +175,33 @@ class Point:
         ----------
         plt : Plot
             Plot.
+        color : str
+            Color.
+        size : int
+            Size.
         """
 
-        plt.scatter(self.x, self.y, color='black', s=20)
+        if size > 0:
+            plt.scatter(self.x, self.y, color=color, s=size)
+
+    #-----------------------------------------------------------------------------------------------
+
+    def is_segment_end(self, s):
+        """
+        Check if point end of segment.
+
+        Parameters
+        ----------
+        s : Segment
+            Segment.
+
+        Returns
+        -------
+        bool
+            True - if point is end of segment, False - otherwise.
+        """
+
+        return (self == s.a) or (self == s.b)
 
 #===================================================================================================
 
@@ -230,7 +240,7 @@ class Points:
 
     #-----------------------------------------------------------------------------------------------
 
-    def draw(self, plt):
+    def draw(self, plt, color='black', size=20):
         """
         Draw on plot.
 
@@ -238,10 +248,14 @@ class Points:
         ----------
         plt : Plot
             Plot.
+        color : str
+            Color.
+        size : int
+            Size.
         """
 
         for p in self.items:
-            p.draw(plt)
+            p.draw(plt, color=color, size=size)
 
     #-----------------------------------------------------------------------------------------------
 
@@ -326,8 +340,10 @@ class Segment:
             B point.
         """
 
+        assert a != b
         self.a = a
         self.b = b
+        self.sort_points()
 
     #-----------------------------------------------------------------------------------------------
 
@@ -383,7 +399,7 @@ class Segment:
 
     #-----------------------------------------------------------------------------------------------
 
-    def draw(self, plt):
+    def draw(self, plt, color='black', linewidth='2', size=20):
         """
         Draw on plot.
 
@@ -391,13 +407,34 @@ class Segment:
         ----------
         plt : Plot
             Plot.
+        color : str
+            Color.
+        linewidth : str
+            Line width.
+        size : int
+            Size of point.
         """
 
         x = [self.a.x, self.b.x]
         y = [self.a.y, self.b.y]
-        plt.plot(x, y, color='black', linewidth='2')
-        self.a.draw(plt)
-        self.b.draw(plt)
+        if linewidth != '0':
+            plt.plot(x, y, color=color, linewidth=linewidth)
+        self.a.draw(plt, color=color, size=size)
+        self.b.draw(plt, color=color, size=size)
+
+    #-----------------------------------------------------------------------------------------------
+
+    def mod2(self):
+        """
+        Square of module.
+
+        Returns
+        -------
+        number
+            Square of length.
+        """
+
+        return (self.a.x - self.b.x)**2 + (self.a.y - self.b.y)**2
 
     #-----------------------------------------------------------------------------------------------
 
@@ -467,10 +504,33 @@ class Segment:
             line = Line.from_segment(self)
             s_line = Line.from_segment(s)
             if line == s_line:
-                # Two segment intersect on segment.
-                assert False
+                # Two segments lie on one line.
+                assert self.a < self.b
+                assert s.a < s.b
+                if self.b == s.a:
+                    return self.b
+                elif s.b == self.a:
+                    return s.b
+                elif (self.b < s.a) or (s.b < self.a):
+                    return None
+                elif self.b > s.a:
+                    return Segment(s.a, self.b)
+                elif s.b > self.a:
+                    return Segment(self.a, s.b)
+                else:
+                    assert False
             else:
                 return line.intersection_with_line(s_line)
+
+    #-----------------------------------------------------------------------------------------------
+
+    def sort_points(self):
+        """
+        Sort points.
+        """
+
+        if self.a > self.b:
+            self.a, self.b = self.b, self.a
 
 #===================================================================================================
 
@@ -490,7 +550,7 @@ class Segments:
 
     #-----------------------------------------------------------------------------------------------
 
-    def draw(self, plt):
+    def draw(self, plt, color='black', linewidth='2', size=20):
         """
         Draw segments.
 
@@ -498,10 +558,16 @@ class Segments:
         ----------
         plt : Plot
             Plot.
+        color : str
+            Color.
+        linewidth : str
+            Line width.
+        size : int
+            Point size.
         """
 
         for s in self.items:
-            s.draw(plt)
+            s.draw(plt, color=color, linewidth=linewidth, size=size)
 
     #-----------------------------------------------------------------------------------------------
 
@@ -558,6 +624,42 @@ class Segments:
 
     #-----------------------------------------------------------------------------------------------
 
+    def add_not_conflict(self, s):
+        """
+        Add new segment without conflicts.
+        New segment can be added if:
+        - it doesn't intersect any segment,
+        - it has one common point with some segment.
+        New segment can not be added if:
+        - it intersect some segment and there is common point - inner point of one of them,
+        - same segment.
+
+        Parameters
+        ----------
+        s : Segment
+            Segment.
+
+        Returns
+        -------
+        bool
+            True - if new segment added, False - otherwise.
+        """
+
+        for si in self.items:
+            if si == s:
+                return False
+            else:
+                intersec = si.intersection_with_segment(s)
+                if isinstance(intersec, Point):
+                    if (not intersec.is_segment_end(si)) and (not intersec.is_segment_end(s)):
+                        return False
+
+        self.add(s)
+
+        return True
+
+    #-----------------------------------------------------------------------------------------------
+
     def split_by_intersections(self):
         """
         Find all intersection points and split all segments.
@@ -595,10 +697,44 @@ class Segments:
             ps = pss[i]
             k = ps.count()
             for j in range(1, k):
-                ss.append(Segment(copy.copy(ps[j]), copy.copy(ps[j - 1])))
+                ss.append(Segment(ps[j], ps[j - 1]))
 
         # Set new set of segments.
         self.items = ss
+
+    #-----------------------------------------------------------------------------------------------
+
+    def points(self):
+        """
+        Get all points.
+
+        Returns
+        -------
+        Points
+            Points.
+        """
+
+        ps = Points()
+
+        for s in self.items:
+            ps.add_unique(s.a)
+            ps.add_unique(s.b)
+
+        return ps
+
+    #-----------------------------------------------------------------------------------------------
+
+    def sort(self, fun):
+        """
+        Sort set of segments.
+
+        Parameters
+        ----------
+        fun : fun
+            Compare function.
+        """
+
+        self.items.sort(key=fun)
 
 #===================================================================================================
 
@@ -626,20 +762,6 @@ class Line:
         self.a = a
         self.b = b
         self.c = c
-
-    #-----------------------------------------------------------------------------------------------
-
-    def __copy__(self):
-        """
-        Line copy.
-
-        Returns
-        -------
-        Line
-            New line.
-        """
-
-        return Line(self.a, self.b, self.c)
 
     #-----------------------------------------------------------------------------------------------
 
@@ -872,19 +994,24 @@ class Line:
 
         if self == line:
             # Create new line.
-            return copy.copy(self)
+            return self
         else:
             a1, b1, c1 = self.a, self.b, self.c
             a2, b2, c2 = line.a, line.b, line.c
             if a1 == 0:
-                assert False
+                #        b1 y + c1 = 0
+                # a2 x + b2 y + c2 = 0
+                y = -c1 / b1
+                assert a2 != 0
+                x = -(b2 * y + c2) / a2
+                return Point(x, y)
             else:
                 d = a1 * b2 - a2 * b1
                 if d == 0:
                     assert False
                 else:
                     y = (c1 * a2 - c2 * a1) / d
-                    x = (-(b1 * y + c1)) / a1
+                    x = -(b1 * y + c1) / a1
                     return Point(x, y)
 
 #===================================================================================================
@@ -975,7 +1102,7 @@ class Triangle:
 
     #-----------------------------------------------------------------------------------------------
 
-    def draw(self, plt):
+    def draw(self, plt, color='black', linewidth='2', size=20):
         """
         Draw on plot.
 
@@ -983,14 +1110,62 @@ class Triangle:
         ----------
         plt : Plot
             Plot.
+        color : str
+            Color.
+        linewidth : str
+            Line width.
+        size : int
+            Points size.
         """
 
-        self.a.draw(plt)
-        self.b.draw(plt)
-        self.c.draw(plt)
-        self.ab.draw(plt)
-        self.bc.draw(plt)
-        self.ac.draw(plt)
+        self.ab.draw(plt, color=color, linewidth=linewidth)
+        self.bc.draw(plt, color=color, linewidth=linewidth)
+        self.ac.draw(plt, color=color, linewidth=linewidth)
+        self.a.draw(plt, color=color, size=size)
+        self.b.draw(plt, color=color, size=size)
+        self.c.draw(plt, color=color, size=size)
+
+    #-----------------------------------------------------------------------------------------------
+
+    def triangulation_segments(self, ps, ss):
+        """
+        Get triangulation segments.
+        New segments must not intersect already existing segments.
+
+        Parameters
+        ----------
+        ps : Points
+            Given set of points.
+        ss : Segments
+            Given set of already existing segments.
+
+        Returns
+        -------
+        Segments
+            New set of segments.
+        """
+
+        # Create list of all possible segments.
+        segments_all = Segments()
+        pn = ps.count()
+        for i in range(pn):
+            for j in range(i + 1, pn):
+                segments_all.add_unique(Segment(ps[i], ps[j]))
+        segments_all.add_unique(self.ab)
+        segments_all.add_unique(self.ac)
+        segments_all.add_unique(self.bc)
+        for i in range(pn):
+            segments_all.add_unique(Segment(ps[i], self.a))
+            segments_all.add_unique(Segment(ps[i], self.b))
+            segments_all.add_unique(Segment(ps[i], self.c))
+        segments_all.sort(fun=lambda s: s.mod2())
+
+        # Create triangulation segments.
+        segments_tri = Segments()
+        for s in segments_all.items:
+            segments_tri.add_not_conflict(s)
+
+        return segments_tri
 
 #===================================================================================================
 
@@ -1000,9 +1175,9 @@ def test():
     """
 
     # Test lines.
-    p00 = Point(Fraction(0, 1), Fraction(0, 1))
-    p10 = Point(Fraction(1, 1), Fraction(0, 1))
-    p01 = Point(Fraction(0, 1), Fraction(1, 1))
+    p00 = Point(Fr(0), Fr(0))
+    p10 = Point(Fr(1), Fr(0))
+    p01 = Point(Fr(0), Fr(1))
     line = Line.from_points(p00, p10)
     assert (line.a == 0) and (line.b == 1) and (line.c == 0)
     line = Line.from_points(p00, p01)
@@ -1011,11 +1186,11 @@ def test():
     assert (line.a == 1) and (line.b == 1) and (line.c == -1)
 
     # Test segments intersections.
-    s = Segment(Point(1, 1), Point(4, 4))
-    s1 = Segment(Point(4, 1), Point(1, 4))
-    s2 = Segment(Point(6, 1), Point(4, 3))
+    s = Segment(Point(Fr(1), Fr(1)), Point(Fr(4), Fr(4)))
+    s1 = Segment(Point(Fr(4), Fr(1)), Point(Fr(1), Fr(4)))
+    s2 = Segment(Point(Fr(6), Fr(1)), Point(Fr(4), Fr(3)))
     assert s.is_intersects_with_segment(s1)
-    assert s.intersection_with_segment(s1) == Point(Fraction(5, 2), Fraction(5, 2))
+    assert s.intersection_with_segment(s1) == Point(Fr(5, 2), Fr(5, 2))
     assert not s.is_intersects_with_segment(s2)
     assert s.intersection_with_segment(s2) is None
 
@@ -1023,17 +1198,18 @@ def test():
 
 if __name__ == '__main__':
     test()
-    t = Triangle(Point(1, 1), Point(11, 1), Point(6, 9))
+    t = Triangle(Point(Fr(1), Fr(1)), Point(Fr(11), Fr(1)), Point(Fr(6), Fr(9)))
     ss = Segments()
-    ss.add(Segment(Point(3, 2), Point(8, 4)))
-    ss.add(Segment(Point(6, 2), Point(6, 7)))
-    ss.add(Segment(Point(8, 2), Point(7, 5)))
-    ss.add(Segment(Point(4, 4), Point(9, 3)))
-    ss.add(Segment(Point(5, 6), Point(7, 7)))
+    ss.add(Segment(Point(Fr(3), Fr(2)), Point(Fr(8), Fr(4))))
+    ss.add(Segment(Point(Fr(6), Fr(2)), Point(Fr(6), Fr(7))))
+    ss.add(Segment(Point(Fr(8), Fr(1)), Point(Fr(7), Fr(5))))
+    ss.add(Segment(Point(Fr(4), Fr(4)), Point(Fr(9), Fr(3))))
+    ss.add(Segment(Point(Fr(5), Fr(6)), Point(Fr(7), Fr(7))))
     ss.split_by_intersections()
-    t.draw(plt)
-    ss.draw(plt)
-    print(ss.items)
+    tri_ss = t.triangulation_segments(ss.points(), ss)
+    tri_ss.draw(plt, color='blue', linewidth='1', size=0)
+    t.draw(plt, color='black', linewidth='3', size=50)
+    ss.draw(plt, color='black', linewidth='3', size=50)
     plt.show()
 
 #===================================================================================================
