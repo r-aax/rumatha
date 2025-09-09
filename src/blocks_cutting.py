@@ -65,10 +65,18 @@ def min_cuts_for_extract_part_2d(n, m, t):
         Minimal cuts count.
     """
 
-    if t > n * m:
+    s = n * m
+
+    if t > s:
         return math.inf
 
-    if (t == 0) or (t == n * m):
+    # normalize n >= m, t <= s / 2
+    if not (n >= m):
+        n, m = m, n
+    if t > s // 2:
+        t = s - t
+
+    if (t == 0) or (t == s):
         r = 0
     elif n == 1:
         r = min_cuts_for_extract_part_1d(m, t)
@@ -113,10 +121,20 @@ def min_cuts_for_extract_part_3d(n, m, k, t):
         Minimal cuts count.
     """
 
-    if t > n * m * k:
+    s = n * m * k
+
+    if t > s:
         return math.inf
 
-    if (t == 0) or (t == n * m * k):
+    # normalize n >= m >= k, t <= s / 2
+    if not ((n >= m) and (m >= k)):
+        a = [n, m, k]
+        a.sort()
+        [k, m, n] = a
+    if t > s // 2:
+        t = s - t
+
+    if (t == 0) or (t == s):
         r = 0
     elif n == 1:
         r = min_cuts_for_extract_part_2d(m, k, t)
