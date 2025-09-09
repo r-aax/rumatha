@@ -4,14 +4,23 @@ Cutting blocks.
 
 import math
 import numpy as np
+import matplotlib
+import matplotlib.pyplot as plt
 import time
+matplotlib.rcParams.update({'font.size': 22})
 
 #===================================================================================================
 
 # Find minimal cuts to extract from block n x m x k (n >= m >= k)
 # part of size t.
 
-# Global mem.
+# Global mem (we can process blocks with n <= 10, m <= 10, k <= 10).
+min_cuts_for_extract_part_n = 11
+min_cuts_for_extract_part_shape = (min_cuts_for_extract_part_n,
+                                   min_cuts_for_extract_part_n,
+                                   min_cuts_for_extract_part_n,
+                                   min_cuts_for_extract_part_n**3)
+min_cuts_for_extract_part_mem = 0 - np.ones(min_cuts_for_extract_part_shape, dtype=int)
 
 #---------------------------------------------------------------------------------------------------
 
@@ -36,10 +45,17 @@ def min_cuts_for_extract_part_1d(n, t):
     if t > n:
         return math.inf
 
+    # Use memory.
+    if min_cuts_for_extract_part_mem[n][1][1][t] >= 0:
+        return min_cuts_for_extract_part_mem[n][1][1][t]
+
     if (t == 0) or (t == n):
         r = 0
     else:
         r = 1
+
+    # Use memory.
+    min_cuts_for_extract_part_mem[n][1][1][t] = r
 
     return r
 
@@ -70,11 +86,15 @@ def min_cuts_for_extract_part_2d(n, m, t):
     if t > s:
         return math.inf
 
-    # normalize n >= m, t <= s / 2
+    # Normalize n >= m, t <= s / 2.
     if not (n >= m):
         n, m = m, n
     if t > s // 2:
         t = s - t
+
+    # Use memory.
+    if min_cuts_for_extract_part_mem[n][m][1][t] >= 0:
+        return min_cuts_for_extract_part_mem[n][m][1][t]
 
     if (t == 0) or (t == s):
         r = 0
@@ -94,6 +114,9 @@ def min_cuts_for_extract_part_2d(n, m, t):
                         min_cuts_for_extract_part_2d(n, m1, t1) \
                         + min_cuts_for_extract_part_2d(n, m - m1, t - t1))
         r = r + 1
+
+    # Use memory.
+    min_cuts_for_extract_part_mem[n][m][1][t] = r
 
     return r
 
@@ -126,13 +149,17 @@ def min_cuts_for_extract_part_3d(n, m, k, t):
     if t > s:
         return math.inf
 
-    # normalize n >= m >= k, t <= s / 2
+    # Normalize n >= m >= k, t <= s / 2
     if not ((n >= m) and (m >= k)):
         a = [n, m, k]
         a.sort()
         [k, m, n] = a
     if t > s // 2:
         t = s - t
+
+    # Use memory.
+    if min_cuts_for_extract_part_mem[n][m][k][t] >= 0:
+        return min_cuts_for_extract_part_mem[n][m][k][t]
 
     if (t == 0) or (t == s):
         r = 0
@@ -158,6 +185,9 @@ def min_cuts_for_extract_part_3d(n, m, k, t):
                         min_cuts_for_extract_part_3d(n, m, k1, t1) \
                         + min_cuts_for_extract_part_3d(n, m, k - k1, t - t1))
         r = r + 1
+
+    # Use memory.
+    min_cuts_for_extract_part_mem[n][m][k][t] = r
 
     return r
 
@@ -186,13 +216,24 @@ def test():
     assert min_cuts_for_extract_part_3d(3, 3, 3, 0) == 0
     assert min_cuts_for_extract_part_3d(3, 3, 3, 27) == 0
     assert min_cuts_for_extract_part_3d(3, 3, 3, 9) == 1
-    t = time.time()
-    assert min_cuts_for_extract_part_3d(3, 3, 3, 9) == 1
-    print('time =', time.time() - t)
+    assert min_cuts_for_extract_part_3d(5, 5, 5, 50) == 1
+    assert min_cuts_for_extract_part_3d(6, 6, 6, 53) == 5
+    assert min_cuts_for_extract_part_3d(6, 6, 6, 59) == 5
+    assert min_cuts_for_extract_part_3d(6, 6, 6, 89) == 5
 
 #---------------------------------------------------------------------------------------------------
 
 if __name__ == '__main__':
     test()
+
+    # Draw plot.
+    plt.figure(figsize=(10, 6), dpi=100)
+    n = 6
+    xs = range(n**3 + 1)
+    plt.plot(xs, [min_cuts_for_extract_part_3d(n, n, n, x) for x in xs], marker='o', linewidth=2.0)
+    plt.xlabel(r'Размер выделяемой части $t$')
+    plt.ylabel(r'Минимальное количество разрезов $P_{6 \times 6 \times 6}^{t}$')
+    plt.grid(True)
+    plt.show()
 
 #===================================================================================================
