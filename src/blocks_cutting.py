@@ -304,6 +304,21 @@ class Block:
 
     #-----------------------------------------------------------------------------------------------
 
+    @property
+    def weight(self):
+        """
+        Weight.
+
+        Returns
+        -------
+        int
+            Weight.
+        """
+
+        return self.cells_count
+
+    #-----------------------------------------------------------------------------------------------
+
     def cut(self, p):
         """
         Cut by position.
@@ -430,6 +445,21 @@ class Blocks:
     #-----------------------------------------------------------------------------------------------
 
     @property
+    def count(self):
+        """
+        Count of blocks.
+
+        Returns
+        -------
+        int
+            Blocks count.
+        """
+
+        return len(self.items)
+
+    #-----------------------------------------------------------------------------------------------
+
+    @property
     def is_empty(self):
         """
         Check if blocks list is empty.
@@ -519,6 +549,25 @@ class Blocks:
 
     #-----------------------------------------------------------------------------------------------
 
+    def pop(self, i):
+        """
+        Pop block.
+
+        Parameters
+        ----------
+        i : int
+            Index of popped block.
+
+        Returns
+        -------
+        Block
+            Popped block.
+        """
+
+        return self.items.pop(i)
+
+    #-----------------------------------------------------------------------------------------------
+
     def pop_first(self):
         """
         Pop first block and return it.
@@ -529,9 +578,7 @@ class Blocks:
             First block.
         """
 
-        b = self.first
-
-        return self.items.pop(0)
+        return self.pop(0)
 
     #-----------------------------------------------------------------------------------------------
 
@@ -645,7 +692,37 @@ class Partitions:
             String representation.
         """
 
-        return f'Ps({self.items},D*={self.d_star})'
+        return f'Ps({self.items},w={self.weight},D*={self.d_star})'
+
+    #-----------------------------------------------------------------------------------------------
+
+    @property
+    def count(self):
+        """
+        Partitions count.
+
+        Returns
+        -------
+        int
+            Partitions count.
+        """
+
+        return len(self.items)
+
+    #-----------------------------------------------------------------------------------------------
+
+    @property
+    def weight(self):
+        """
+        Weight.
+
+        Returns
+        -------
+        int
+            Weight.
+        """
+
+        return sum([p.weight for p in self.items])
 
     #-----------------------------------------------------------------------------------------------
 
@@ -799,7 +876,86 @@ def distribute_half_max_block(bs, ps, d_star):
 
 #---------------------------------------------------------------------------------------------------
 
-def distribute_min_blocks_cuts(bs, ps):
+def distribute_min_blocks_cuts_full_under(bs, ps, target_load):
+    """
+    Find block index bi and partition index pi for which:
+    partitions[pi].weight + blocks[bi].weight <= target_load
+    and
+    target_load - (partitions[pi].weight + blocks[bi].weight) -> min
+
+    Parameters
+    ----------
+    bs : Blocks
+        Blocks.
+    ps : Partitions
+        Partitions.
+    target_load : float
+        Target load.
+
+    Returns
+    -------
+    (int, int)
+        Block index, partition index, if block and partition index found.
+    None, None
+        If block and partition index not found.
+    """
+
+    bi, pi, d = None, None, math.inf
+
+    for pii in range(ps.count):
+        pw = ps.items[pii].weight
+        for bii in range(bs.count):
+            bw = bs.items[bii].weight
+            if pw + bw <= target_load:
+                di = target_load - (pw + bw)
+                if di < d:
+                    bi, pi, d = bii, pii, di
+
+    return bi, pi
+
+def distribute_min_blocks_cuts_part_under(bs, ps, target_load, margin, min_block):
+    """
+    Find part of block to place in partition with underflow.
+
+    Parameters
+    ----------
+    bs : Blocks
+        Blocks.
+    ps : Partitions
+        Partitions.
+    target_load : float
+        Target load.
+    margin : int
+        Margin.
+    min_block : int
+        Min block limit.
+
+    Returns
+    -------
+    (int, int, int)
+        Block index, partition index, cut position if solution is found.
+    (None, None, None)
+        If solution is not found.
+    """
+
+    bi, pi, pos, d = None, None, None, math.inf
+
+    for pii in range(ps.count):
+        pw = ps.items[pii].weight
+        for bii in range(bs.count):
+            b = bs.items[bii]
+            for posi in range(margin, b.a - margin + 1):
+                bpw = posi * b.b * b.c
+                if bpw <= min_block:
+                    if pw + bpw <= target_load:
+                        di = target_load - (pw + bpw)
+                        if di < d:
+                            bi, pi, pos, d = bii, pii, posi, di
+
+    return bi, pi, pos
+
+
+def distribute_min_blocks_cuts(bs, ps, margin, min_block):
     """
     Distribution with blocks cuts minimization.
 
@@ -809,6 +965,10 @@ def distribute_min_blocks_cuts(bs, ps):
         Blocks.
     ps : Partitions.
         Partitions.
+    margin : int
+        Limit margin for result blocks.
+    min_block : int
+        Limit minimal block size.
 
     Returns
     -------
@@ -816,7 +976,31 @@ def distribute_min_blocks_cuts(bs, ps):
         Blocks cuts count.
     """
 
-    return 0
+    cc = 0
+    target_load = bs.cells_count / ps.count
+
+    while not bs.is_empty:
+
+        # Try to place full block.
+        bi, pi = distribute_min_blocks_cuts_full_under(bs, ps, target_load)
+        if not bi is None:
+            b = bs.pop(bi)
+            ps.items[pi].add(b)
+            continue
+
+        # Try to place part of block underflow.
+        bi, pi, pos = distribute_min_blocks_cuts_part_under(bs, ps,
+                                                            target_load, margin, min_block)
+        if not bi is None:
+            b = bs.pop(bi)
+            b1, b2 = b.cut(pos)
+            ps.items[pi].add(b1)
+            bs.add(b2)
+            continue
+
+        break
+
+    return cc
 
 #===================================================================================================
 
@@ -877,7 +1061,9 @@ if __name__ == '__main__':
 
     # Distribution parameters.
     k = 4
-    d_star = 0.05
+    d_star = 0.01
+    margin = 3
+    min_block = 64
     ps_g = Partitions(k)
     ps_h = Partitions(k)
     ps_m = Partitions(k)
@@ -885,7 +1071,7 @@ if __name__ == '__main__':
     # Distribute blocks.
     cc_g = distribute_greedy(bs_g, ps_g)
     cc_h = distribute_half_max_block(bs_h, ps_h, d_star)
-    cc_m = distribute_min_blocks_cuts(bs_m, ps_m)
+    cc_m = distribute_min_blocks_cuts(bs_m, ps_m, margin, min_block)
 
     # Print result.
     print('Partitions:')
