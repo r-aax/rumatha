@@ -7,6 +7,7 @@ import numpy as np
 import matplotlib
 import matplotlib.pyplot as plt
 import time
+import random
 matplotlib.rcParams.update({'font.size': 22})
 
 #===================================================================================================
@@ -14,13 +15,16 @@ matplotlib.rcParams.update({'font.size': 22})
 # Find minimal cuts to extract from block n x m x k (n >= m >= k)
 # part of size t.
 
-# Global mem (we can process blocks with n <= 10, m <= 10, k <= 10).
-min_cuts_for_extract_part_n = 11
-min_cuts_for_extract_part_shape = (min_cuts_for_extract_part_n,
-                                   min_cuts_for_extract_part_n,
-                                   min_cuts_for_extract_part_n,
-                                   min_cuts_for_extract_part_n**3)
-min_cuts_for_extract_part_mem = 0 - np.ones(min_cuts_for_extract_part_shape, dtype=int)
+min_cuts_for_extract_part_on = False
+
+if min_cuts_for_extract_part_on:
+    # Global mem (we can process blocks with n <= 10, m <= 10, k <= 10).
+    min_cuts_for_extract_part_n = 11
+    min_cuts_for_extract_part_shape = (min_cuts_for_extract_part_n,
+                                       min_cuts_for_extract_part_n,
+                                       min_cuts_for_extract_part_n,
+                                       min_cuts_for_extract_part_n**3)
+    min_cuts_for_extract_part_mem = 0 - np.ones(min_cuts_for_extract_part_shape, dtype=int)
 
 #---------------------------------------------------------------------------------------------------
 
@@ -193,47 +197,457 @@ def min_cuts_for_extract_part_3d(n, m, k, t):
 
 #===================================================================================================
 
+class Block:
+    """
+    Block of sizes a * b * c.
+    """
+
+    #-----------------------------------------------------------------------------------------------
+
+    def __init__(self, a, b, c):
+        """
+        Block constructor.
+
+        Parameters
+        ----------
+        a : int
+            Side size.
+        b : int
+            Side size.
+        c : int
+            Side size.
+        """
+
+        self.a = a
+        self.b = b
+        self.c = c
+
+    #-----------------------------------------------------------------------------------------------
+
+    @staticmethod
+    def random(alo, ahi, blo, bhi, clo, chi):
+        """
+        Create random block.
+
+        Parameters
+        ----------
+        alo : int
+            Lo value of side a.
+        ahi : int
+            Hi value of side a.
+        blo : int
+            Lo value of side b.
+        bhi : int
+            Hi value of side b.
+        clo : int
+            Lo value of side c.
+        chi : int
+            Hi value of side c.
+
+        Returns
+        -------
+        Block
+            Random block.
+        """
+
+        return Block(random.randint(alo, ahi),
+                     random.randint(blo, bhi),
+                     random.randint(clo, chi))
+
+    #-----------------------------------------------------------------------------------------------
+
+    def __repr__(self):
+        """
+        String representation.
+
+        Returns
+        -------
+        str
+            String representation.
+        """
+
+        return f'B({self.a}-{self.b}-{self.c},{self.cells_count}c)'
+
+    #-----------------------------------------------------------------------------------------------
+
+    @property
+    def cells_count(self):
+        """
+        Cells count.
+
+        Returns
+        -------
+        int
+            Count of cells.
+        """
+
+        return self.a * self.b * self.c
+
+#===================================================================================================
+
+class Blocks:
+    """
+    Blocks.
+    Blocks are always in descending order.
+    """
+
+    #-----------------------------------------------------------------------------------------------
+
+    def __init__(self):
+        """
+        Constructor.
+        """
+
+        self.items = []
+
+    #-----------------------------------------------------------------------------------------------
+
+    @staticmethod
+    def random(m, alo, ahi, blo, bhi, clo, chi):
+        """
+        Random blocks set.
+
+        Parameters
+        ----------
+        m : int
+            Blocks count.
+        alo : int
+            Lo value of side a.
+        ahi : int
+            Hi value of side a.
+        blo : int
+            Lo value of side b.
+        bhi : int
+            Hi value of side b.
+        clo : int
+            Lo value of side c.
+        chi : int
+            Hi value of side c.
+
+        Returns
+        -------
+        Blocks
+            Blocks set.
+        """
+
+        bs = Blocks()
+        for _ in range(m):
+            bs.items.append(Block.random(alo, ahi, blo, bhi, clo, chi))
+        bs.sort()
+
+        return bs
+
+    #-----------------------------------------------------------------------------------------------
+
+    def __repr__(self):
+        """
+        String representation.
+
+        Returns
+        -------
+        str
+            String representation.
+        """
+
+        return f'Bs({self.items})'
+
+    #-----------------------------------------------------------------------------------------------
+
+    @property
+    def is_empty(self):
+        """
+        Check if blocks list is empty.
+
+        Returns
+        -------
+        bool
+            True - if blocks list is empty,
+            False - otherwise.
+        """
+
+        return len(self.items) == 0
+
+    #-----------------------------------------------------------------------------------------------
+
+    def sort(self):
+        """
+        Sort.
+        """
+
+        self.items.sort(key=lambda b: b.cells_count, reverse=True)
+
+    #-----------------------------------------------------------------------------------------------
+
+    def add(self, b):
+        """
+        Add block.
+
+        Parameters
+        ----------
+        b : Block
+            Block.
+        """
+
+        self.items.append(b)
+        self.sort()
+
+    #-----------------------------------------------------------------------------------------------
+
+    @property
+    def cells_count(self):
+        """
+        Cells count.
+
+        Returns
+        -------
+        int
+            Cells count.
+        """
+
+        return sum([b.cells_count for b in self.items])
+
+    #-----------------------------------------------------------------------------------------------
+
+    @property
+    def first(self):
+        """
+        First block.
+
+        Returns
+        -------
+        Block
+            First block.
+        """
+
+        return self.items[0]
+
+    #-----------------------------------------------------------------------------------------------
+
+    def pop_first(self):
+        """
+        Pop first block and return it.
+
+        Returns
+        -------
+        Block
+            First block.
+        """
+
+        b = self.first
+
+        return self.items.pop(0)
+
+#===================================================================================================
+
+class Partition:
+    """
+    Partition.
+    """
+
+    #-----------------------------------------------------------------------------------------------
+
+    def __init__(self):
+        """
+        Create partition.
+        """
+
+        self.blocks = Blocks()
+
+    #-----------------------------------------------------------------------------------------------
+
+    def __repr__(self):
+        """
+        String representation.
+
+        Returns
+        -------
+        str
+            String representation.
+        """
+
+        return f'P({self.weight}w)'
+
+    #-----------------------------------------------------------------------------------------------
+
+    def add(self, b):
+        """
+        Add block to partition.
+
+        Parameters
+        ----------
+        b : Block
+            Block.
+        """
+
+        self.blocks.add(b)
+
+    #-----------------------------------------------------------------------------------------------
+
+    @property
+    def weight(self):
+        """
+        Weight of partition.
+
+        Returns
+        -------
+        int
+            Weight.
+        """
+
+        return self.blocks.cells_count
+
+#===================================================================================================
+
+class Partitions:
+    """
+    Partitions class.
+    """
+
+    #-----------------------------------------------------------------------------------------------
+
+    def __init__(self, k):
+        """
+        Constructor.
+
+        Parameters
+        ----------
+        k : int
+            Partitions count.
+        """
+
+        self.items = []
+        for _ in range(k):
+            self.items.append(Partition())
+
+    #-----------------------------------------------------------------------------------------------
+
+    def __repr__(self):
+        """
+        String representation.
+
+        Returns
+        -------
+        str
+            String representation.
+        """
+
+        return f'Ps({self.items},D*={self.d_star})'
+
+    #-----------------------------------------------------------------------------------------------
+
+    @property
+    def lightest(self):
+        """
+        Get lightest partition.
+
+        Returns
+        -------
+        Partition
+            The lightest partition.
+        """
+
+        p = None
+
+        for pi in self.items:
+            if p is None:
+                p = pi
+            elif pi.weight < p.weight:
+                p = pi
+
+        return p
+
+    #-----------------------------------------------------------------------------------------------
+
+    @property
+    def d_star(self):
+        """
+        D*.
+
+        Returns
+        -------
+        float
+            D* value.
+        """
+
+        ws = [p.weight for p in self.items]
+        mw = max(ws)
+        aw = sum(ws) / len(self.items)
+
+        if aw > 0.0:
+            return (mw - aw) / aw
+        else:
+            return 0.0
+
+#===================================================================================================
+
+def distribute_greedy(bs, ps):
+    """
+    Distribute blocks with greedy strategy.
+
+    Parameters
+    ----------
+    bs : Blocks
+        Blocks.
+    ps : Partitions
+        Partitions.
+    """
+
+    while not bs.is_empty:
+        ps.lightest.add(bs.pop_first())
+
+#===================================================================================================
+
 def test():
     """
     Tests.
     """
 
-    # Minimal cuts count to extract from block n x 1 x 1 part of size t.
-    # 1d
-    assert math.isinf(min_cuts_for_extract_part_1d(5, 6))
-    assert min_cuts_for_extract_part_1d(5, 0) == 0
-    assert min_cuts_for_extract_part_1d(5, 5) == 0
-    assert min_cuts_for_extract_part_1d(5, 3) == 1
-    # 2d
-    assert math.isinf(min_cuts_for_extract_part_2d(3, 3, 10))
-    assert min_cuts_for_extract_part_2d(3, 3, 0) == 0
-    assert min_cuts_for_extract_part_2d(3, 3, 9) == 0
-    assert min_cuts_for_extract_part_2d(3, 3, 6) == 1
-    assert min_cuts_for_extract_part_2d(3, 3, 4) == 2
-    assert min_cuts_for_extract_part_2d(3, 3, 5) == 2
-    # 3d
-    assert math.isinf(min_cuts_for_extract_part_3d(3, 3, 3, 28))
-    assert min_cuts_for_extract_part_3d(3, 3, 3, 0) == 0
-    assert min_cuts_for_extract_part_3d(3, 3, 3, 27) == 0
-    assert min_cuts_for_extract_part_3d(3, 3, 3, 9) == 1
-    assert min_cuts_for_extract_part_3d(5, 5, 5, 50) == 1
-    assert min_cuts_for_extract_part_3d(6, 6, 6, 53) == 5
-    assert min_cuts_for_extract_part_3d(6, 6, 6, 59) == 5
-    assert min_cuts_for_extract_part_3d(6, 6, 6, 89) == 5
+    if min_cuts_for_extract_part_on:
+        # Minimal cuts count to extract from block n x 1 x 1 part of size t.
+        # 1d
+        assert math.isinf(min_cuts_for_extract_part_1d(5, 6))
+        assert min_cuts_for_extract_part_1d(5, 0) == 0
+        assert min_cuts_for_extract_part_1d(5, 5) == 0
+        assert min_cuts_for_extract_part_1d(5, 3) == 1
+        # 2d
+        assert math.isinf(min_cuts_for_extract_part_2d(3, 3, 10))
+        assert min_cuts_for_extract_part_2d(3, 3, 0) == 0
+        assert min_cuts_for_extract_part_2d(3, 3, 9) == 0
+        assert min_cuts_for_extract_part_2d(3, 3, 6) == 1
+        assert min_cuts_for_extract_part_2d(3, 3, 4) == 2
+        assert min_cuts_for_extract_part_2d(3, 3, 5) == 2
+        # 3d
+        assert math.isinf(min_cuts_for_extract_part_3d(3, 3, 3, 28))
+        assert min_cuts_for_extract_part_3d(3, 3, 3, 0) == 0
+        assert min_cuts_for_extract_part_3d(3, 3, 3, 27) == 0
+        assert min_cuts_for_extract_part_3d(3, 3, 3, 9) == 1
+        assert min_cuts_for_extract_part_3d(5, 5, 5, 50) == 1
+        assert min_cuts_for_extract_part_3d(6, 6, 6, 53) == 5
+        assert min_cuts_for_extract_part_3d(6, 6, 6, 59) == 5
+        assert min_cuts_for_extract_part_3d(6, 6, 6, 89) == 5
 
 #---------------------------------------------------------------------------------------------------
 
 if __name__ == '__main__':
     test()
 
-    # Draw plot.
-    plt.figure(figsize=(10, 6), dpi=100)
-    n = 6
-    xs = range(n**3 + 1)
-    plt.plot(xs, [min_cuts_for_extract_part_3d(n, n, n, x) for x in xs], marker='o', linewidth=2.0)
-    plt.xlabel(r'Размер выделяемой части $t$')
-    plt.ylabel(r'Минимальное количество разрезов $P_{6 \times 6 \times 6}^{t}$')
-    plt.grid(True)
-    plt.show()
+    if min_cuts_for_extract_part_on:
+        # Draw plot for P(n, m, k, t).
+        plt.figure(figsize=(10, 6), dpi=100)
+        n = 6
+        xs = range(n**3 + 1)
+        plt.plot(xs, [min_cuts_for_extract_part_3d(n, n, n, x) for x in xs],
+                 marker='o', linewidth=2.0)
+        plt.xlabel(r'Размер выделяемой части $t$')
+        plt.ylabel(r'Минимальное количество разрезов $P_{6 \times 6 \times 6}^{t}$')
+        plt.grid(True)
+        plt.show()
+
+    bs = Blocks.random(10, 10, 20, 10, 20, 10, 20)
+    print(bs)
+    ps = Partitions(4)
+    print('distribute_greedy:')
+    distribute_greedy(bs, ps)
+    print(ps)
 
 #===================================================================================================
