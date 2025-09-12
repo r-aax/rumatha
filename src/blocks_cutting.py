@@ -218,9 +218,28 @@ class Block:
             Side size.
         """
 
+        # We need first dimension maximum.
+        li = [a, b, c]
+        li.sort(reverse=True)
+        [a, b, c] = li
+
         self.a = a
         self.b = b
         self.c = c
+
+    #-----------------------------------------------------------------------------------------------
+
+    def copy(self):
+        """
+        Copy constructor.
+
+        Returns
+        -------
+        Block
+            Block copy.
+        """
+
+        return Block(self.a, self.b, self.c)
 
     #-----------------------------------------------------------------------------------------------
 
@@ -283,6 +302,44 @@ class Block:
 
         return self.a * self.b * self.c
 
+    #-----------------------------------------------------------------------------------------------
+
+    def cut(self, p):
+        """
+        Cut by position.
+        We cut only in a-direction.
+
+        Parameters
+        ----------
+        p : int
+            Position.
+
+        Returns
+        -------
+        (Block, Block)
+            Result blocks.
+        """
+
+        a, b, c = self.a, self.b, self.c
+
+        assert (p > 0) and (p < a)
+
+        return Block(p, b, c), Block(a - p, b, c)
+
+    #-----------------------------------------------------------------------------------------------
+
+    def cut_half(self):
+        """
+        Cut half.
+
+        Returns
+        -------
+        (Block, Block)
+            Result blocks.
+        """
+
+        return self.cut(self.a // 2)
+
 #===================================================================================================
 
 class Blocks:
@@ -299,6 +356,25 @@ class Blocks:
         """
 
         self.items = []
+
+    #-----------------------------------------------------------------------------------------------
+
+    def copy(self):
+        """
+        Get blocks copy.
+
+        Returns
+        -------
+        Blocks
+            Blocks copy.
+        """
+
+        bs = Blocks()
+        for b in self.items:
+            bs.add(b.copy(), is_sort=False)
+        bs.sort()
+
+        return bs
 
     #-----------------------------------------------------------------------------------------------
 
@@ -332,7 +408,7 @@ class Blocks:
 
         bs = Blocks()
         for _ in range(m):
-            bs.items.append(Block.random(alo, ahi, blo, bhi, clo, chi))
+            bs.add(Block.random(alo, ahi, blo, bhi, clo, chi), is_sort=False)
         bs.sort()
 
         return bs
@@ -378,7 +454,7 @@ class Blocks:
 
     #-----------------------------------------------------------------------------------------------
 
-    def add(self, b):
+    def add(self, b, is_sort=True):
         """
         Add block.
 
@@ -386,9 +462,29 @@ class Blocks:
         ----------
         b : Block
             Block.
+        is_sort : bool
+            It is needed to sort after adding.
         """
 
         self.items.append(b)
+
+        if is_sort:
+            self.sort()
+
+    #-----------------------------------------------------------------------------------------------
+
+    def add_blocks(self, bs):
+        """
+        Add blocks.
+
+        Parameters
+        ----------
+        bs : [Block]
+            List of blocks.
+        """
+
+        for b in bs:
+            self.add(b, is_sort=False)
         self.sort()
 
     #-----------------------------------------------------------------------------------------------
@@ -437,6 +533,15 @@ class Blocks:
 
         return self.items.pop(0)
 
+    #-----------------------------------------------------------------------------------------------
+
+    def clear(self):
+        """
+        Clear blocks.
+        """
+
+        self.items.clear()
+
 #===================================================================================================
 
 class Partition:
@@ -479,7 +584,7 @@ class Partition:
             Block.
         """
 
-        self.blocks.add(b)
+        self.blocks.add(b, is_sort=False)
 
     #-----------------------------------------------------------------------------------------------
 
@@ -495,6 +600,15 @@ class Partition:
         """
 
         return self.blocks.cells_count
+
+    #-----------------------------------------------------------------------------------------------
+
+    def clear(self):
+        """
+        Clear all blocks.
+        """
+
+        self.blocks.clear()
 
 #===================================================================================================
 
@@ -578,7 +692,55 @@ class Partitions:
         else:
             return 0.0
 
+    #-----------------------------------------------------------------------------------------------
+
+    def clear(self):
+        """
+        Clear all partitions.
+        """
+
+        for p in self.items:
+            p.clear()
+
+    #-----------------------------------------------------------------------------------------------
+
+    def fill_blocks(self, bs):
+        """
+        Fill bs with all blocks from all partitions.
+
+        Parameters
+        ----------
+        bs : Blocks
+            Blocks.
+        """
+
+        for p in self.items:
+            for b in p.blocks.items:
+                bs.add(b, is_sort=False)
+        bs.sort()
+
+    #-----------------------------------------------------------------------------------------------
+
+    def pass_blocks(self, bs):
+        """
+        Pass blocks.
+
+        Parameters
+        ----------
+        bs : Blocks
+            Blocks.
+        """
+
+        self.fill_blocks(bs)
+        self.clear()
+
 #===================================================================================================
+
+# Distribution meethods:
+# - greedy - with no cuts;
+# - half_max_block - cut max block by half if D* is not reached.
+
+#---------------------------------------------------------------------------------------------------
 
 def distribute_greedy(bs, ps):
     """
@@ -590,10 +752,71 @@ def distribute_greedy(bs, ps):
         Blocks.
     ps : Partitions
         Partitions.
+
+    Returns
+    -------
+    int
+        Cuts count.
     """
 
     while not bs.is_empty:
         ps.lightest.add(bs.pop_first())
+
+    return 0
+
+#---------------------------------------------------------------------------------------------------
+
+def distribute_half_max_block(bs, ps, d_star):
+    """
+    Distribute block using half max block strategy.
+
+    Parameters
+    ----------
+    bs : Blocks
+        Blocks.
+    ps : Partitions
+        Partitions.
+    d_star : float
+        Target D* value.
+
+    Returns
+    -------
+    int
+        Cuts count.
+    """
+
+    cc = 0
+
+    while True:
+        distribute_greedy(bs, ps)
+        if ps.d_star <= d_star:
+            break
+        ps.pass_blocks(bs)
+        bs.add_blocks(bs.pop_first().cut_half())
+        cc = cc + 1
+
+    return cc
+
+#---------------------------------------------------------------------------------------------------
+
+def distribute_min_blocks_cuts(bs, ps):
+    """
+    Distribution with blocks cuts minimization.
+
+    Parameters
+    ----------
+    bs : Blocks
+        Blocks.
+    ps : Partitions.
+        Partitions.
+
+    Returns
+    -------
+    int
+        Blocks cuts count.
+    """
+
+    return 0
 
 #===================================================================================================
 
@@ -643,11 +866,31 @@ if __name__ == '__main__':
         plt.grid(True)
         plt.show()
 
-    bs = Blocks.random(10, 10, 20, 10, 20, 10, 20)
-    print(bs)
-    ps = Partitions(4)
-    print('distribute_greedy:')
-    distribute_greedy(bs, ps)
-    print(ps)
+    # Create blocks.
+    print('Blocks')
+    bs_g = Blocks.random(10, 10, 20, 10, 20, 10, 20)
+    bs_h = bs_g.copy()
+    bs_m = bs_g.copy()
+    print('bs_g', bs_g)
+    print('bs_h', bs_h)
+    print('bs_m', bs_m)
+
+    # Distribution parameters.
+    k = 4
+    d_star = 0.05
+    ps_g = Partitions(k)
+    ps_h = Partitions(k)
+    ps_m = Partitions(k)
+
+    # Distribute blocks.
+    cc_g = distribute_greedy(bs_g, ps_g)
+    cc_h = distribute_half_max_block(bs_h, ps_h, d_star)
+    cc_m = distribute_min_blocks_cuts(bs_m, ps_m)
+
+    # Print result.
+    print('Partitions:')
+    print(ps_g, cc_g)
+    print(ps_h, cc_h)
+    print(ps_m, cc_m)
 
 #===================================================================================================
