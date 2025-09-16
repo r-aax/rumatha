@@ -891,21 +891,23 @@ def distribute_min_blocks_cuts_find_next(bs, ps, t, mrg, mb,
     # Initial values.
     k, b, p, c, d = 'n', None, None, 0, math.inf
 
-    # Check all partitions and blocks.
-    for pi in ps.items:
-        pw = pi.weight
-        for bi in bs.items:
-            bw = bi.weight
-
-            # Full under.
-            if is_full_under:
+    # Full under.
+    if is_full_under:
+        for pi in ps.items:
+            pw = pi.weight
+            for bi in bs.items:
+                bw = bi.weight
                 if pw + bw <= t:
                     di = t - (pw + bw)
                     if di < d:
                         k, b, p, c, d = 'U', bi, pi, 0, di
 
-            # Part under.
-            if is_part_under:
+    # Part under.
+    if (k == 'n') and is_part_under:
+        for pi in ps.items:
+            pw = pi.weight
+            for bi in bs.items:
+                bw = bi.weight
                 for ci in range(mrg, bi.a - mrg + 1):
                     bpw = ci * bi.b * bi.c
                     bpw1 = bw - bpw
@@ -915,15 +917,12 @@ def distribute_min_blocks_cuts_find_next(bs, ps, t, mrg, mb,
                             if di < d:
                                 k, b, p, c, d = 'u', bi, pi, ci, di
 
-            # Full over.
-            if is_full_above:
-                if pw + bw > t:
-                    di = (pw + bw) - t
-                    if di < d:
-                        k, b, p, c, d = 'A', bi, pi, 0, di
-
-            # Part above.
-            if is_part_above:
+    # Part above.
+    if (k == 'n') and is_part_above:
+        for pi in ps.items:
+            pw = pi.weight
+            for bi in bs.items:
+                bw = bi.weight
                 for ci in range(mrg, bi.a - mrg + 1):
                     bpw = ci * bi.b * bi.c
                     bpw1 = bw - bpw
@@ -932,6 +931,17 @@ def distribute_min_blocks_cuts_find_next(bs, ps, t, mrg, mb,
                             di = (pw + bpw) - t
                             if di < d:
                                 k, b, p, c, d = 'a', bi, pi, ci, di
+
+    # Full above.
+    if (k == 'n') and is_full_above:
+        for pi in ps.items:
+            pw = pi.weight
+            for bi in bs.items:
+                bw = bi.weight
+                if pw + bw > t:
+                    di = (pw + bw) - t
+                    if di < d:
+                        k, b, p, c, d = 'A', bi, pi, 0, di
 
     return k, b, p, c
 
@@ -959,6 +969,28 @@ def distribute_min_blocks_cuts(bs, ps, mrg, mb,
         Flag for check place full block above.
     is_part_above : bool
         Flag for check place part block above.
+
+    Variants of flags:
+    +---------------+---------------+---------------+---------------+---------
+    | is_full_under | is_part_under | is_full_above | is_part_above | comment
+    +---------------+---------------+---------------+---------------+---------
+    | False         | False         | False         | False         | NA - no variants at all
+    | False         | False         | False         | True          | NA - bad for small blocks
+    | False         | False         | True          | False         | NA - bad for small blocks
+    | False         | False         | True          | True          | NA - bad for small blocks
+    | False         | True          | False         | False         | NA - bad for big blocks
+    | False         | True          | False         | True          | NA - bad if cuts are not available due margin or min block size
+    | False         | True          | True          | False         | NA - bad if cuts are not available due margin or min block size
+    | False         | True          | True          | True          | NA - bad if cuts are not available due margin or min block size
+    | True          | False         | False         | False         | NA - bad for big blocks
+    | True          | False         | False         | True          | NA - bad if cuts are not available due margin or min block size
+    | True          | False         | True          | False         | BAD - because there is no cuts
+    | True          | False         | True          | True          | YES
+    | True          | True          | False         | False         | NA - bad for big blocks
+    | True          | True          | False         | True          | NA - bad if cuts are not available due margin or min block size
+    | True          | True          | True          | False         | YES
+    | True          | True          | True          | True          | YES
+    +---------------+---------------+---------------+---------------+---------
 
     Returns
     -------
@@ -994,6 +1026,11 @@ def distribute_min_blocks_cuts(bs, ps, mrg, mb,
             bs.add(b2)
             t = p.weight
         else:
+            print('bs:', bs, bs.items)
+            print('ps:', ps, ps.items)
+            print('t:', t, '\nmrg:', mrg, '\nmb:', mb)
+            print('is_full_under:', is_full_under, '\nis_part_under:', is_part_under)
+            print('is_full_above:', is_full_above, '\nis_part_above:', is_part_above)
             assert False
 
     return cc
@@ -1031,6 +1068,54 @@ def test():
 
 #---------------------------------------------------------------------------------------------------
 
+def test_distribute_blocks_step():
+    """
+    Test for blocks distribution.
+    """
+
+    random.seed()
+
+    # Create blocks.
+    print('Blocks')
+    bs_g = Blocks.random(10, 20, 30, 20, 30, 20, 30)
+    bs_m_1011 = bs_g.copy()
+    bs_m_1110 = bs_g.copy()
+    bs_m_1111 = bs_g.copy()
+    bs_h = bs_g.copy()
+    print(bs_g.items)
+    print('bs_g', bs_g)
+
+    # Distribution parameters.
+    k = 16
+    margin = 3
+    min_block = 64
+    ps_g = Partitions(k)
+    ps_m_1011 = Partitions(k)
+    ps_m_1110 = Partitions(k)
+    ps_m_1111 = Partitions(k)
+    ps_h = Partitions(k)
+
+    # Distribute blocks.
+    cc_g = distribute_greedy(bs_g, ps_g)
+    cc_m_1011 = distribute_min_blocks_cuts(bs_m_1011, ps_m_1011, margin, min_block, True,  False, True,  True)
+    cc_m_1110 = distribute_min_blocks_cuts(bs_m_1110, ps_m_1110, margin, min_block, True,  True,  True,  False)
+    cc_m_1111 = distribute_min_blocks_cuts(bs_m_1111, ps_m_1111, margin, min_block, True,  True,  True,  True)
+    d_star = min([ps_m_1011.d_star, ps_m_1110.d_star, ps_m_1111.d_star])
+    cc_h = distribute_half_max_block(bs_h, ps_h, d_star)
+
+    # Print result.
+    print('Partitions:')
+    print('Greedy     :', ps_g, cc_g)
+    print('MinCut 1011:', ps_m_1011, cc_m_1011)
+    print('MinCut 1110:', ps_m_1110, cc_m_1110)
+    print('MinCut 1111:', ps_m_1111, cc_m_1111)
+    print('HalfBl     :', ps_h, cc_h)
+
+    return [ps_g.d_star, ps_m_1011.d_star, ps_m_1110.d_star, ps_m_1111.d_star, ps_h.d_star], \
+           [cc_g, cc_m_1011, cc_m_1110, cc_m_1111, cc_h]
+
+#---------------------------------------------------------------------------------------------------
+
 if __name__ == '__main__':
     test()
 
@@ -1046,77 +1131,30 @@ if __name__ == '__main__':
         plt.grid(True)
         plt.show()
 
-    # Create blocks.
-    print('Blocks')
-    bs_g = Blocks.random(20, 20, 40, 20, 40, 20, 40)
-    bs_m_0001 = bs_g.copy()
-    bs_m_0010 = bs_g.copy()
-    bs_m_0011 = bs_g.copy()
-    bs_m_0100 = bs_g.copy()
-    bs_m_0101 = bs_g.copy()
-    bs_m_0110 = bs_g.copy()
-    bs_m_0111 = bs_g.copy()
-    bs_m_1000 = bs_g.copy()
-    bs_m_1001 = bs_g.copy()
-    bs_m_1010 = bs_g.copy()
-    bs_m_1011 = bs_g.copy()
-    bs_m_1100 = bs_g.copy()
-    bs_m_1101 = bs_g.copy()
-    bs_m_1110 = bs_g.copy()
-    bs_m_1111 = bs_g.copy()
-    bs_h = bs_g.copy()
-    print(bs_g.items)
-    print('bs_g', bs_g)
-
-    # Distribution parameters.
-    k = 32
-    margin = 3
-    min_block = 64
-    ps_g = Partitions(k)
-    ps_m_0001 = Partitions(k)
-    ps_m_0010 = Partitions(k)
-    ps_m_0011 = Partitions(k)
-    ps_m_0100 = Partitions(k)
-    ps_m_0101 = Partitions(k)
-    ps_m_0110 = Partitions(k)
-    ps_m_0111 = Partitions(k)
-    ps_m_1000 = Partitions(k)
-    ps_m_1001 = Partitions(k)
-    ps_m_1010 = Partitions(k)
-    ps_m_1011 = Partitions(k)
-    ps_m_1100 = Partitions(k)
-    ps_m_1101 = Partitions(k)
-    ps_m_1110 = Partitions(k)
-    ps_m_1111 = Partitions(k)
-    ps_h = Partitions(k)
-
-    # Distribute blocks.
-    cc_g = distribute_greedy(bs_g, ps_g)
-    cc_m_0001 = distribute_min_blocks_cuts(bs_m_0001, ps_m_0001, margin, min_block, False, False, False, True)
-    cc_m_0010 = distribute_min_blocks_cuts(bs_m_0010, ps_m_0010, margin, min_block, False, False, True,  False)
-    cc_m_0011 = distribute_min_blocks_cuts(bs_m_0011, ps_m_0011, margin, min_block, False, False, True,  True)
-    cc_m_0100 = distribute_min_blocks_cuts(bs_m_0100, ps_m_0100, margin, min_block, False, True,  False, False)
-    cc_m_0101 = distribute_min_blocks_cuts(bs_m_0101, ps_m_0101, margin, min_block, False, True,  False, True)
-    cc_m_0110 = distribute_min_blocks_cuts(bs_m_0110, ps_m_0110, margin, min_block, False, True,  True,  False)
-    cc_m_0111 = distribute_min_blocks_cuts(bs_m_0111, ps_m_0111, margin, min_block, False, True,  True,  True)
-    cc_m_1000 = distribute_min_blocks_cuts(bs_m_1000, ps_m_1000, margin, min_block, True,  False, False, False)
-    cc_m_1001 = distribute_min_blocks_cuts(bs_m_1001, ps_m_1001, margin, min_block, True,  False, False, True)
-    cc_m_1010 = distribute_min_blocks_cuts(bs_m_1010, ps_m_1010, margin, min_block, True,  False, True,  False)
-    cc_m_1011 = distribute_min_blocks_cuts(bs_m_1011, ps_m_1011, margin, min_block, True,  False, True,  True)
-    cc_m_1100 = distribute_min_blocks_cuts(bs_m_1100, ps_m_1100, margin, min_block, True,  True,  False, False)
-    cc_m_1101 = distribute_min_blocks_cuts(bs_m_1101, ps_m_1101, margin, min_block, True,  True,  False, True)
-    cc_m_1110 = distribute_min_blocks_cuts(bs_m_1110, ps_m_1110, margin, min_block, True,  True,  True,  False)
-    cc_m_1111 = distribute_min_blocks_cuts(bs_m_1111, ps_m_1111, margin, min_block, True,  True,  True,  True)
-    d_star = min([ps_m_0001.d_star, ps_m_0010.d_star, ps_m_0011.d_star,
-                  ps_m_0100.d_star, ps_m_0101.d_star, ps_m_0110.d_star, ps_m_0111.d_star,
-                  ps_m_1000.d_star, ps_m_1001.d_star, ps_m_1010.d_star, ps_m_1011.d_star,
-                  ps_m_1100.d_star, ps_m_1101.d_star, ps_m_1110.d_star, ps_m_1111.d_star])
-    cc_h = distribute_half_max_block(bs_h, ps_h, d_star)
-
-    # Print result.
-    print('Partitions:')
-    print('Greedy:', ps_g, cc_g)
-    print('MinCut:', ps_m, cc_m)
-    print('HalfBl:', ps_h, cc_h)
+    s_g, s_m_1011, s_m_1110, s_m_1111, s_h = [], [], [], [], []
+    c_g, c_m_1011, c_m_1110, c_m_1111, c_h = [], [], [], [], []
+    for i in range(100):
+        print('STEP :', i)
+        r = test_distribute_blocks_step()
+        s_g.append(r[0][0])
+        s_m_1011.append(r[0][1])
+        s_m_1110.append(r[0][2])
+        s_m_1111.append(r[0][3])
+        s_h.append(r[0][4])
+        c_g.append(r[1][0])
+        c_m_1011.append(r[1][1])
+        c_m_1110.append(r[1][2])
+        c_m_1111.append(r[1][3])
+        c_h.append(r[1][4])
+    print('s_g', s_g)
+    print('s_m_1011', s_m_1011)
+    print('s_m_1110', s_m_1110)
+    print('s_m_1111', s_m_1111)
+    print('s_h', s_h)
+    print('c_g', c_g)
+    print('c_m_1011', c_m_1011)
+    print('c_m_1110', c_m_1110)
+    print('c_m_1111', c_m_1111)
+    print('c_h', c_h)
 
 #===================================================================================================
