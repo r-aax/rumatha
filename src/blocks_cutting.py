@@ -8,6 +8,9 @@ import matplotlib
 import matplotlib.pyplot as plt
 import time
 import random
+
+from setuptools.command.easy_install import is_sh
+
 matplotlib.rcParams.update({'font.size': 22})
 
 #===================================================================================================
@@ -844,12 +847,11 @@ def distribute_half_max_block(bs, ps, d_star):
 
 #---------------------------------------------------------------------------------------------------
 
-def distribute_min_blocks_cuts_full_under(bs, ps, t):
+def distribute_min_blocks_cuts_find_next(bs, ps, t, mrg, mb,
+                                         is_full_under, is_part_under,
+                                         is_full_above, is_part_above):
     """
-    Find block b and partition p for which:
-    p.weight + b.weight <= t
-    and
-    t - (p.weight + b.weight) -> min
+    Find next possible block (or block part) placement into some partition.
 
     Parameters
     ----------
@@ -858,247 +860,84 @@ def distribute_min_blocks_cuts_full_under(bs, ps, t):
     ps : Partitions
         Partitions.
     t : float
-        Target load.
-
-    Returns
-    -------
-    (Block, Block)
-        Block, partition, if block and partition found.
-    None, None
-        If block and partition not found.
-    """
-
-    b, p, d = None, None, math.inf
-
-    for pi in ps.items:
-        pw = pi.weight
-        for bi in bs.items:
-            bw = bi.weight
-            if pw + bw <= t:
-                di = t - (pw + bw)
-                if di < d:
-                    b, p, d = bi, pi, di
-
-    return b, p
-
-def distribute_min_blocks_cuts_full_over(bs, ps, t):
-    """
-    Find block b and partition p for which:
-    p.weight + b.weight > t
-    and
-    (p.weight + b.weight) - t -> min
-
-    Parameters
-    ----------
-    bs : Blocks
-        Blocks.
-    ps : Partitions
-        Partitions.
-    t : float
-        Target load.
-
-    Returns
-    -------
-    (Block, Block)
-        Block, partition, if block and partition found.
-    None, None
-        If block and partition not found.
-    """
-
-    b, p, d = None, None, math.inf
-
-    for pi in ps.items:
-        pw = pi.weight
-        for bi in bs.items:
-            bw = bi.weight
-            if pw + bw > t:
-                di = (pw + bw) - t
-                if di < d:
-                    b, p, d = bi, pi, di
-
-    return b, p
-
-def distribute_min_blocks_cuts_part_under(bs, ps, t, mrg, mb):
-    """
-    Find part of block to place in partition with underflow.
-
-    Parameters
-    ----------
-    bs : Blocks
-        Blocks.
-    ps : Partitions
-        Partitions.
-    t : float
-        Target load.
+        Target weight.
     mrg : int
-        Margin.
-    mb : int
-        Min block limit.
-
-    Returns
-    -------
-    (Block, Partition, int)
-        Block, partition, cut position if solution is found.
-    (None, None, None)
-        If solution is not found.
-    """
-
-    b, p, pos, d = None, None, None, math.inf
-
-    for pi in ps.items:
-        pw = pi.weight
-        for bi in bs.items:
-            for posi in range(mrg, bi.a - mrg + 1):
-                bpw = posi * bi.b * bi.c
-                bpw1 = bi.weight - bpw
-                if (bpw >= min_block) and (bpw1 >= min_block):
-                    if pw + bpw <= t:
-                        di = t - (pw + bpw)
-                        if di < d:
-                            b, p, pos, d = bi, pi, posi, di
-
-    return b, p, pos
-
-def distribute_min_blocks_cuts_part_over(bs, ps, t, mrg, mb):
-    """
-    Distribution min blocks.
-    Try to place part over target weight.
-
-    Parameters
-    ----------
-    bs : Blocks
-        Blocks.
-    ps : Partitions
-        Partitions.
-    t : float
-        Target value.
-    mrg : int
-        Margin for block cuts.
+        Margin of cut.
     mb : int
         Minimal block size.
+    is_full_under : bool
+        Flag for check place full block under.
+    is_part_under
+        Flag for check place part block under.
+    is_full_above : bool
+        Flag for check place full block above.
+    is_part_above : bool
+        Flag for check place part block above.
 
     Returns
     -------
-    (Block, Partition, int)
-        Block, partition, cut position.
-    (None, None, None)
-        If solution is not found.
+    (char, Block, Partition, int):
+        Kind of placement, block, partition, cut position.
+        Kind of placement may be one of the following values:
+            'U' - full under,
+            'u' - part under,
+            'A' - full above,
+            'a' - part above,
+            'n' - no placement.
+    ('n', None, None, 0):
+        If placement can not be found.
     """
 
-    b, p, pos, d = None, None, None, math.inf
+    # Initial values.
+    k, b, p, c, d = 'n', None, None, 0, math.inf
 
-    for pi in ps.items:
-        pw = pi.weight
-        for bi in bs.items:
-            for posi in range(mrg, bi.a - mrg + 1):
-                bpw = posi * bi.b * bi.c
-                bpw1 = bi.weight - bpw
-                if (bpw >= mb) and (bpw1 >= mb):
-                    if pw + bpw > t:
-                        di = (pw + bpw) - t
-                        if di < d:
-                            b, p, pos, d = bi, pi, posi, di
-
-    return b, p, pos
-
-def distribute_min_blocks_cuts_under(bs, ps, t, mrg, mb):
-    """
-    Find part of block or full block to place in partition with underflow.
-
-    Parameters
-    ----------
-    bs : Blocks
-        Blocks.
-    ps : Partitions
-        Partitions.
-    t : float
-        Target load.
-    mrg : int
-        Margin.
-    mb : int
-        Min block limit.
-
-    Returns
-    -------
-    (Block, Partition, int)
-        Block, partition, cut position if solution is found.
-    (Block, Partition, 0)
-        Block and partition to place block into partition without cut.
-    (None, None, None)
-        If solution is not found.
-    """
-
-    b, p, pos, d = None, None, None, math.inf
-
+    # Check all partitions and blocks.
     for pi in ps.items:
         pw = pi.weight
         for bi in bs.items:
             bw = bi.weight
-            if pw + bw <= t:
-                di = t - (pw + bw)
-                if di < d:
-                    b, p, pos, d = bi, pi, 0, di
-            for posi in range(mrg, bi.a - mrg + 1):
-                bpw = posi * bi.b * bi.c
-                bpw1 = bi.weight - bpw
-                if (bpw >= min_block) and (bpw1 >= min_block):
-                    if pw + bpw <= t:
-                        di = t - (pw + bpw)
-                        if di < d:
-                            b, p, pos, d = bi, pi, posi, di
 
-    return b, p, pos
+            # Full under.
+            if is_full_under:
+                if pw + bw <= t:
+                    di = t - (pw + bw)
+                    if di < d:
+                        k, b, p, c, d = 'U', bi, pi, 0, di
 
-def distribute_min_blocks_cuts_over(bs, ps, t, mrg, mb):
-    """
-    Distribution min blocks.
-    Try to place part (or full block) over target weight.
+            # Part under.
+            if is_part_under:
+                for ci in range(mrg, bi.a - mrg + 1):
+                    bpw = ci * bi.b * bi.c
+                    bpw1 = bw - bpw
+                    if (bpw >= mb) and (bpw1 >= mb):
+                        if pw + bpw <= t:
+                            di = t - (pw + bpw)
+                            if di < d:
+                                k, b, p, c, d = 'u', bi, pi, ci, di
 
-    Parameters
-    ----------
-    bs : Blocks
-        Blocks.
-    ps : Partitions
-        Partitions.
-    t : float
-        Target value.
-    mrg : int
-        Margin for block cuts.
-    mb : int
-        Minimal block size.
+            # Full over.
+            if is_full_above:
+                if pw + bw > t:
+                    di = (pw + bw) - t
+                    if di < d:
+                        k, b, p, c, d = 'A', bi, pi, 0, di
 
-    Returns
-    -------
-    (Block, Partition, int)
-        Block, partition, cut position.
-    (Block, Partition, 0)
-        Block, partition if we use full block.
-    (None, None, None)
-        If solution is not found.
-    """
+            # Part above.
+            if is_part_above:
+                for ci in range(mrg, bi.a - mrg + 1):
+                    bpw = ci * bi.b * bi.c
+                    bpw1 = bw - bpw
+                    if (bpw >= mb) and (bpw1 >= mb):
+                        if pw + bpw > t:
+                            di = (pw + bpw) - t
+                            if di < d:
+                                k, b, p, c, d = 'a', bi, pi, ci, di
 
-    b, p, pos, d = None, None, None, math.inf
+    return k, b, p, c
 
-    for pi in ps.items:
-        pw = pi.weight
-        for bi in bs.items:
-            bw = bi.weight
-            if pw + bw > t:
-                di = (pw + bw) - t
-                if di < d:
-                    b, p, pos, d = bi, pi, 0, di
-            for posi in range(mrg, bi.a - mrg + 1):
-                bpw = posi * bi.b * bi.c
-                bpw1 = bi.weight - bpw
-                if (bpw >= mb) and (bpw1 >= mb):
-                    if pw + bpw > t:
-                        di = (pw + bpw) - t
-                        if di < d:
-                            b, p, pos, d = bi, pi, posi, di
-
-    return b, p, pos
-
-def distribute_min_blocks_cuts(bs, ps, mrg, mb):
+def distribute_min_blocks_cuts(bs, ps, mrg, mb,
+                               is_full_under, is_part_under,
+                               is_full_above, is_part_above):
     """
     Distribution with blocks cuts minimization.
 
@@ -1112,6 +951,14 @@ def distribute_min_blocks_cuts(bs, ps, mrg, mb):
         Limit margin for result blocks.
     mb : int
         Limit minimal block size.
+    is_full_under : bool
+        Flag for check place full block under.
+    is_part_under
+        Flag for check place part block under.
+    is_full_above : bool
+        Flag for check place full block above.
+    is_part_above : bool
+        Flag for check place part block above.
 
     Returns
     -------
@@ -1123,38 +970,31 @@ def distribute_min_blocks_cuts(bs, ps, mrg, mb):
     t = bs.cells_count / ps.count
 
     while not bs.is_empty:
-
-        # Try to place under.
-        b, p, pos = distribute_min_blocks_cuts_under(bs, ps, t, mrg, mb)
-        if not b is None:
-            if pos == 0:
-                p.add(b)
-                bs.remove(b)
-            else:
-                b1, b2 = b.cut(pos)
-                cc = cc + 1
-                p.add(b1, is_sort=False)
-                bs.remove(b)
-                bs.add(b2)
-            continue
-
-        # Try to place over.
-        b, p, pos = distribute_min_blocks_cuts_over(bs, ps, t, mrg, mb)
-        if not b is None:
-            if pos == 0:
-                p.add(b)
-                bs.remove(b)
-                t = p.weight
-            else:
-                b1, b2 = b.cut(pos)
-                cc = cc + 1
-                p.add(b1, is_sort=False)
-                bs.remove(b)
-                bs.add(b2)
-                t = p.weight
-            continue
-
-        assert False
+        k, b, p, c = distribute_min_blocks_cuts_find_next(bs, ps, t, mrg, mb,
+                                                          is_full_under, is_part_under,
+                                                          is_full_above, is_part_above)
+        if k == 'U':
+            p.add(b)
+            bs.remove(b)
+        elif k == 'u':
+            b1, b2 = b.cut(c)
+            cc = cc + 1
+            p.add(b1, is_sort=False)
+            bs.remove(b)
+            bs.add(b2)
+        elif k == 'A':
+            p.add(b)
+            bs.remove(b)
+            t = p.weight
+        elif k == 'a':
+            b1, b2 = b.cut(c)
+            cc = cc + 1
+            p.add(b1, is_sort=False)
+            bs.remove(b)
+            bs.add(b2)
+            t = p.weight
+        else:
+            assert False
 
     return cc
 
@@ -1209,25 +1049,69 @@ if __name__ == '__main__':
     # Create blocks.
     print('Blocks')
     bs_g = Blocks.random(20, 20, 40, 20, 40, 20, 40)
-    bs_m = bs_g.copy()
+    bs_m_0001 = bs_g.copy()
+    bs_m_0010 = bs_g.copy()
+    bs_m_0011 = bs_g.copy()
+    bs_m_0100 = bs_g.copy()
+    bs_m_0101 = bs_g.copy()
+    bs_m_0110 = bs_g.copy()
+    bs_m_0111 = bs_g.copy()
+    bs_m_1000 = bs_g.copy()
+    bs_m_1001 = bs_g.copy()
+    bs_m_1010 = bs_g.copy()
+    bs_m_1011 = bs_g.copy()
+    bs_m_1100 = bs_g.copy()
+    bs_m_1101 = bs_g.copy()
+    bs_m_1110 = bs_g.copy()
+    bs_m_1111 = bs_g.copy()
     bs_h = bs_g.copy()
     print(bs_g.items)
     print('bs_g', bs_g)
-    print('bs_m', bs_m)
-    print('bs_h', bs_h)
 
     # Distribution parameters.
     k = 32
     margin = 3
     min_block = 64
     ps_g = Partitions(k)
-    ps_m = Partitions(k)
+    ps_m_0001 = Partitions(k)
+    ps_m_0010 = Partitions(k)
+    ps_m_0011 = Partitions(k)
+    ps_m_0100 = Partitions(k)
+    ps_m_0101 = Partitions(k)
+    ps_m_0110 = Partitions(k)
+    ps_m_0111 = Partitions(k)
+    ps_m_1000 = Partitions(k)
+    ps_m_1001 = Partitions(k)
+    ps_m_1010 = Partitions(k)
+    ps_m_1011 = Partitions(k)
+    ps_m_1100 = Partitions(k)
+    ps_m_1101 = Partitions(k)
+    ps_m_1110 = Partitions(k)
+    ps_m_1111 = Partitions(k)
     ps_h = Partitions(k)
 
     # Distribute blocks.
     cc_g = distribute_greedy(bs_g, ps_g)
-    cc_m = distribute_min_blocks_cuts(bs_m, ps_m, margin, min_block)
-    cc_h = distribute_half_max_block(bs_h, ps_h, ps_m.d_star)
+    cc_m_0001 = distribute_min_blocks_cuts(bs_m_0001, ps_m_0001, margin, min_block, False, False, False, True)
+    cc_m_0010 = distribute_min_blocks_cuts(bs_m_0010, ps_m_0010, margin, min_block, False, False, True,  False)
+    cc_m_0011 = distribute_min_blocks_cuts(bs_m_0011, ps_m_0011, margin, min_block, False, False, True,  True)
+    cc_m_0100 = distribute_min_blocks_cuts(bs_m_0100, ps_m_0100, margin, min_block, False, True,  False, False)
+    cc_m_0101 = distribute_min_blocks_cuts(bs_m_0101, ps_m_0101, margin, min_block, False, True,  False, True)
+    cc_m_0110 = distribute_min_blocks_cuts(bs_m_0110, ps_m_0110, margin, min_block, False, True,  True,  False)
+    cc_m_0111 = distribute_min_blocks_cuts(bs_m_0111, ps_m_0111, margin, min_block, False, True,  True,  True)
+    cc_m_1000 = distribute_min_blocks_cuts(bs_m_1000, ps_m_1000, margin, min_block, True,  False, False, False)
+    cc_m_1001 = distribute_min_blocks_cuts(bs_m_1001, ps_m_1001, margin, min_block, True,  False, False, True)
+    cc_m_1010 = distribute_min_blocks_cuts(bs_m_1010, ps_m_1010, margin, min_block, True,  False, True,  False)
+    cc_m_1011 = distribute_min_blocks_cuts(bs_m_1011, ps_m_1011, margin, min_block, True,  False, True,  True)
+    cc_m_1100 = distribute_min_blocks_cuts(bs_m_1100, ps_m_1100, margin, min_block, True,  True,  False, False)
+    cc_m_1101 = distribute_min_blocks_cuts(bs_m_1101, ps_m_1101, margin, min_block, True,  True,  False, True)
+    cc_m_1110 = distribute_min_blocks_cuts(bs_m_1110, ps_m_1110, margin, min_block, True,  True,  True,  False)
+    cc_m_1111 = distribute_min_blocks_cuts(bs_m_1111, ps_m_1111, margin, min_block, True,  True,  True,  True)
+    d_star = min([ps_m_0001.d_star, ps_m_0010.d_star, ps_m_0011.d_star,
+                  ps_m_0100.d_star, ps_m_0101.d_star, ps_m_0110.d_star, ps_m_0111.d_star,
+                  ps_m_1000.d_star, ps_m_1001.d_star, ps_m_1010.d_star, ps_m_1011.d_star,
+                  ps_m_1100.d_star, ps_m_1101.d_star, ps_m_1110.d_star, ps_m_1111.d_star])
+    cc_h = distribute_half_max_block(bs_h, ps_h, d_star)
 
     # Print result.
     print('Partitions:')
