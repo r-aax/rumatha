@@ -1182,6 +1182,8 @@ class Triangle:
 
         # Create triangulation segments.
         segments_tri = Segments()
+        for s in ss.items:
+            segments_tri.add_not_conflict(s)
         for s in segments_all.items:
             segments_tri.add_not_conflict(s)
 
