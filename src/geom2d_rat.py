@@ -1,5 +1,3 @@
-import copy
-import math
 from fractions import Fraction as Fr
 import matplotlib.pyplot as plt
 
@@ -18,9 +16,9 @@ class Point:
 
         Parameters
         ----------
-        x : number | Fraction
+        x : Fraction
             x-coord.
-        y : number | Fraction
+        y : Fraction
             y-coord.
         """
 
@@ -41,7 +39,8 @@ class Point:
         Returns
         -------
         bool
-            True - if equal to another point, False - otherwise.
+            True - if equal to another point,
+            False - otherwise.
         """
 
         return (self.x == p.x) and (self.y == p.y)
@@ -60,7 +59,8 @@ class Point:
         Returns
         -------
         bool
-            True - it not equal to another point, False - otherwise.
+            True - it not equal to another point,
+            False - otherwise.
         """
 
         return not (self == p)
@@ -79,7 +79,8 @@ class Point:
         Returns
         -------
         bool
-            True - if self >= p, False - otherwise.
+            True - if self >= p,
+            False - otherwise.
         """
 
         if self.x > p.x:
@@ -103,7 +104,8 @@ class Point:
         Returns
         -------
         bool
-            True - if self > p, False - otherwise.
+            True - if self > p,
+            False - otherwise.
         """
 
         if self.x > p.x:
@@ -127,7 +129,8 @@ class Point:
         Returns
         -------
         bool
-            True - if self <= p, False - otherwise.
+            True - if self <= p,
+            False - otherwise.
         """
 
         return not (self > p)
@@ -146,7 +149,8 @@ class Point:
         Returns
         -------
         bool
-            True - if self < p, False - otherwise.
+            True - if self < p,
+            False - otherwise.
         """
 
         return not (self >= p)
@@ -198,7 +202,8 @@ class Point:
         Returns
         -------
         bool
-            True - if point is end of segment, False - otherwise.
+            True - if point is end of segment,
+            False - otherwise.
         """
 
         return (self == s.a) or (self == s.b)
@@ -299,7 +304,8 @@ class Points:
         Returns
         -------
         bool
-            True - if point was added, False - otherwise.
+            True - if point was added,
+            False - otherwise.
         """
 
         for pi in self.items:
@@ -332,6 +338,8 @@ class Segment:
         """
         Constructor.
 
+        Segment ends are sorted.
+
         Parameters
         ----------
         a : Point
@@ -359,7 +367,8 @@ class Segment:
         Returns
         -------
         bool
-            True - if equal to another segment, False - otherwise.
+            True - if equal to another segment,
+            False - otherwise.
         """
 
         return ((self.a == s.a) and (self.b == s.b)) or ((self.a == s.b) and (self.b == s.a))
@@ -378,7 +387,8 @@ class Segment:
         Returns
         -------
         bool
-            True - if not equal to another segment, False - otherwise.
+            True - if not equal to another segment,
+            False - otherwise.
         """
 
         return not (self == s)
@@ -395,7 +405,7 @@ class Segment:
             String representation.
         """
 
-        return f'Segm({self.a}, {self.b})'
+        return f'Segm[{self.a}, {self.b}]'
 
     #-----------------------------------------------------------------------------------------------
 
@@ -491,7 +501,7 @@ class Segment:
         Returns
         -------
         None
-            If there is no intersetion.
+            If there is no intersection.
         Point
             If there is intersection on one point.
         Segment
@@ -611,7 +621,8 @@ class Segments:
         Returns
         -------
         bool
-            True - if new segment was added, False - otherwise.
+            True - if new segment was added,
+            False - otherwise.
         """
 
         for si in self.items:
@@ -642,7 +653,8 @@ class Segments:
         Returns
         -------
         bool
-            True - if new segment added, False - otherwise.
+            True - if new segment added,
+            False - segment can not be added because of conflict.
         """
 
         for si in self.items:
@@ -751,11 +763,11 @@ class Line:
 
         Parameters
         ----------
-        a : any
+        a : Fraction
             a coefficient.
-        b : any
+        b : Fraction
             b coefficient.
-        c : any
+        c : Fraction
             c coefficient.
         """
 
@@ -769,6 +781,10 @@ class Line:
     def from_points(a, b):
         """
         Create line from two points.
+
+        Line may be one of two types:
+        1) a = 1, b, c
+        2) a = 0, b = 1, c
 
         Parameters
         ----------
@@ -832,7 +848,8 @@ class Line:
         Returns
         -------
         bool
-            True - if equal to another line, False - otherwise.
+            True - if equal to another line,
+            False - otherwise.
         """
 
         return (self.a == line.a) and (self.b == line.b) and (self.c == line.c)
@@ -851,7 +868,8 @@ class Line:
         Returns
         -------
         bool
-            True - if not equal to another line, False - otherwise.
+            True - if not equal to another line,
+            False - otherwise.
         """
 
         return not (self == line)
@@ -992,8 +1010,10 @@ class Line:
             If it is the same line.
         """
 
+        if not self.is_intersects_with_line(line):
+            return None
+
         if self == line:
-            # Create new line.
             return self
         else:
             a1, b1, c1 = self.a, self.b, self.c
@@ -1053,7 +1073,7 @@ class Triangle:
             String representation.
         """
 
-        return f'Tri({self.a}, {self.b}, {self.c})'
+        return f'Tri<{self.a}, {self.b}, {self.c}>'
 
     #-----------------------------------------------------------------------------------------------
 
@@ -1198,13 +1218,24 @@ def test():
 
 if __name__ == '__main__':
     test()
-    t = Triangle(Point(Fr(1), Fr(1)), Point(Fr(11), Fr(1)), Point(Fr(6), Fr(9)))
+
+    t = Triangle(Point(Fr(1), Fr(1)), Point(Fr(11), Fr(1)), Point(Fr(6), Fr(8)))
     ss = Segments()
-    ss.add(Segment(Point(Fr(3), Fr(2)), Point(Fr(8), Fr(4))))
-    ss.add(Segment(Point(Fr(6), Fr(2)), Point(Fr(6), Fr(7))))
-    ss.add(Segment(Point(Fr(8), Fr(1)), Point(Fr(7), Fr(5))))
-    ss.add(Segment(Point(Fr(4), Fr(4)), Point(Fr(9), Fr(3))))
-    ss.add(Segment(Point(Fr(5), Fr(6)), Point(Fr(7), Fr(7))))
+    # 1st trajectory
+    ss.add(Segment(Point(Fr(2), Fr(12, 5)), Point(Fr(6), Fr(2))))
+    ss.add(Segment(Point(Fr(6), Fr(2)),     Point(Fr(8), Fr(26, 5))))
+    # 2nd trajectory
+    ss.add(Segment(Point(Fr(8), Fr(1)),     Point(Fr(19, 2), Fr(31, 10))))
+    # 3rd trajectory
+    ss.add(Segment(Point(Fr(7, 2), Fr(1)),  Point(Fr(3), Fr(3))))
+    ss.add(Segment(Point(Fr(3), Fr(3)),     Point(Fr(5), Fr(11, 2))))
+    ss.add(Segment(Point(Fr(5), Fr(11, 2)), Point(Fr(7), Fr(33, 5))))
+    # 4th trajectory
+    ss.add(Segment(Point(Fr(4), Fr(26, 5)), Point(Fr(5), Fr(7, 2))))
+    ss.add(Segment(Point(Fr(5), Fr(7, 2)),  Point(Fr(6), Fr(5))))
+    ss.add(Segment(Point(Fr(6), Fr(5)),     Point(Fr(8), Fr(3))))
+    ss.add(Segment(Point(Fr(8), Fr(3)),     Point(Fr(7), Fr(1))))
+    #
     ss.split_by_intersections()
     tri_ss = t.triangulation_segments(ss.points(), ss)
     tri_ss.draw(plt, color='blue', linewidth='1', size=0)
