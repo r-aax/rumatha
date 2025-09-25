@@ -6,10 +6,7 @@ import math
 import numpy as np
 import matplotlib
 import matplotlib.pyplot as plt
-import time
 import random
-
-from setuptools.command.easy_install import is_sh
 
 matplotlib.rcParams.update({'font.size': 22})
 
