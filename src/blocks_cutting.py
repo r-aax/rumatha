@@ -781,7 +781,7 @@ class Partitions:
 
 #===================================================================================================
 
-# Distribution meethods:
+# Distribution methods:
 # - greedy - with no cuts;
 # - half_max_block - cut max block by half if D* is not reached.
 
@@ -1065,16 +1065,41 @@ def test():
 
 #---------------------------------------------------------------------------------------------------
 
-def test_distribute_blocks_step():
+def test_distribute_blocks_step(m, k, lo, hi):
     """
-    Test for blocks distribution.
+    Blocks distribution test.
+
+    Parameters
+    ----------
+    m : int
+        Blocks count.
+    k : int
+        Processes count.
+    lo : int
+        Lo bound of block size.
+    hi : int
+        Hi bound of block size.
+
+    Returns
+    -------
+    [gstar, 1011star, 1110star, 1111star, hstar], [gcc, 1011cc, 1110cc, 1111cc, hcc]
+        gstar - D* for greedy distribution,
+        1011star - D* for 1011 algorithm,
+        1110star - D* for 1110 algorithm,
+        1111star - D* for 1111 algorithm,
+        hstar - D* for half max block allgorithm,
+        gcc - cuts count for greedy distribution,
+        1011cc - cuts count for 1011 algorithm,
+        1110cc - cuts count for 1110 algorithm,
+        1111cc - cuts count for 1111 algorithm,
+        hcc - cuts count for half max block allgorithm.
     """
 
     random.seed()
 
     # Create blocks.
     print('Blocks')
-    bs_g = Blocks.random(10, 20, 30, 20, 30, 20, 30)
+    bs_g = Blocks.random(m, lo, hi, lo, hi, lo, hi)
     bs_m_1011 = bs_g.copy()
     bs_m_1110 = bs_g.copy()
     bs_m_1111 = bs_g.copy()
@@ -1083,7 +1108,6 @@ def test_distribute_blocks_step():
     print('bs_g', bs_g)
 
     # Distribution parameters.
-    k = 16
     margin = 3
     min_block = 64
     ps_g = Partitions(k)
@@ -1094,9 +1118,15 @@ def test_distribute_blocks_step():
 
     # Distribute blocks.
     cc_g = distribute_greedy(bs_g, ps_g)
-    cc_m_1011 = distribute_min_blocks_cuts(bs_m_1011, ps_m_1011, margin, min_block, True,  False, True,  True)
-    cc_m_1110 = distribute_min_blocks_cuts(bs_m_1110, ps_m_1110, margin, min_block, True,  True,  True,  False)
-    cc_m_1111 = distribute_min_blocks_cuts(bs_m_1111, ps_m_1111, margin, min_block, True,  True,  True,  True)
+    cc_m_1011 = distribute_min_blocks_cuts(bs_m_1011, ps_m_1011, margin, min_block,
+                                           True,  False,
+                                           True,  True)
+    cc_m_1110 = distribute_min_blocks_cuts(bs_m_1110, ps_m_1110, margin, min_block,
+                                           True,  True,
+                                           True,  False)
+    cc_m_1111 = distribute_min_blocks_cuts(bs_m_1111, ps_m_1111, margin, min_block,
+                                           True,  True,
+                                           True,  True)
     d_star = min([ps_m_1011.d_star, ps_m_1110.d_star, ps_m_1111.d_star])
     cc_h = distribute_half_max_block(bs_h, ps_h, d_star)
 
@@ -1110,6 +1140,52 @@ def test_distribute_blocks_step():
 
     return [ps_g.d_star, ps_m_1011.d_star, ps_m_1110.d_star, ps_m_1111.d_star, ps_h.d_star], \
            [cc_g, cc_m_1011, cc_m_1110, cc_m_1111, cc_h]
+
+#---------------------------------------------------------------------------------------------------
+
+def test_distribute_blocks_steps(runs, m, k, lo, hi):
+    """
+    Blocks distribution test.
+
+    Parameters
+    ----------
+    runs : int
+        Runs count.
+    m : int
+        Blocks count.
+    k : int
+        Processes count.
+    lo : int
+        Lo bound of block size.
+    hi : int
+        Hi bound of block size.
+    """
+
+    s_g, s_m_1011, s_m_1110, s_m_1111, s_h = [], [], [], [], []
+    c_g, c_m_1011, c_m_1110, c_m_1111, c_h = [], [], [], [], []
+    for i in range(runs):
+        print('STEP :', i)
+        r = test_distribute_blocks_step(m, k, lo, hi)
+        s_g.append(r[0][0])
+        s_m_1011.append(r[0][1])
+        s_m_1110.append(r[0][2])
+        s_m_1111.append(r[0][3])
+        s_h.append(r[0][4])
+        c_g.append(r[1][0])
+        c_m_1011.append(r[1][1])
+        c_m_1110.append(r[1][2])
+        c_m_1111.append(r[1][3])
+        c_h.append(r[1][4])
+    print('s_g =', s_g)
+    print('s_m_1011 =', s_m_1011)
+    print('s_m_1110 =', s_m_1110)
+    print('s_m_1111 =', s_m_1111)
+    print('s_h =', s_h)
+    print('c_g =', c_g)
+    print('c_m_1011 =', c_m_1011)
+    print('c_m_1110 =', c_m_1110)
+    print('c_m_1111 =', c_m_1111)
+    print('c_h =', c_h)
 
 #---------------------------------------------------------------------------------------------------
 
@@ -1128,30 +1204,6 @@ if __name__ == '__main__':
         plt.grid(True)
         plt.show()
 
-    s_g, s_m_1011, s_m_1110, s_m_1111, s_h = [], [], [], [], []
-    c_g, c_m_1011, c_m_1110, c_m_1111, c_h = [], [], [], [], []
-    for i in range(100):
-        print('STEP :', i)
-        r = test_distribute_blocks_step()
-        s_g.append(r[0][0])
-        s_m_1011.append(r[0][1])
-        s_m_1110.append(r[0][2])
-        s_m_1111.append(r[0][3])
-        s_h.append(r[0][4])
-        c_g.append(r[1][0])
-        c_m_1011.append(r[1][1])
-        c_m_1110.append(r[1][2])
-        c_m_1111.append(r[1][3])
-        c_h.append(r[1][4])
-    print('s_g', s_g)
-    print('s_m_1011', s_m_1011)
-    print('s_m_1110', s_m_1110)
-    print('s_m_1111', s_m_1111)
-    print('s_h', s_h)
-    print('c_g', c_g)
-    print('c_m_1011', c_m_1011)
-    print('c_m_1110', c_m_1110)
-    print('c_m_1111', c_m_1111)
-    print('c_h', c_h)
+    test_distribute_blocks_steps(200, 100, 64, 20, 100)
 
 #===================================================================================================
