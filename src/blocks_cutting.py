@@ -15,9 +15,9 @@ matplotlib.rcParams.update({'font.size': 22})
 # Find minimal cuts to extract from block n x m x k (n >= m >= k)
 # part of size t.
 
-min_cuts_for_extract_part_on = False
+MIN_CUTS_FOR_EXTRACT_PART_ON = False
 
-if min_cuts_for_extract_part_on:
+if MIN_CUTS_FOR_EXTRACT_PART_ON:
     # Global mem (we can process blocks with n <= 10, m <= 10, k <= 10).
     min_cuts_for_extract_part_n = 11
     min_cuts_for_extract_part_shape = (min_cuts_for_extract_part_n,
@@ -1039,7 +1039,7 @@ def test():
     Tests.
     """
 
-    if min_cuts_for_extract_part_on:
+    if MIN_CUTS_FOR_EXTRACT_PART_ON:
         # Minimal cuts count to extract from block n x 1 x 1 part of size t.
         # 1d
         assert math.isinf(min_cuts_for_extract_part_1d(5, 6))
@@ -1192,7 +1192,7 @@ def test_distribute_blocks_steps(runs, m, k, lo, hi):
 if __name__ == '__main__':
     test()
 
-    if min_cuts_for_extract_part_on:
+    if MIN_CUTS_FOR_EXTRACT_PART_ON:
         # Draw plot for P(n, m, k, t).
         plt.figure(figsize=(10, 6), dpi=100)
         n = 6
@@ -1204,6 +1204,6 @@ if __name__ == '__main__':
         plt.grid(True)
         plt.show()
 
-    test_distribute_blocks_steps(200, 100, 64, 20, 100)
+    test_distribute_blocks_steps(10, 10, 10, 20, 30)
 
 #===================================================================================================

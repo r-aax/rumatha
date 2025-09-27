@@ -1,3 +1,7 @@
+"""
+2D geometry in rational coordinates.
+"""
+
 from fractions import Fraction as Fr
 import matplotlib.pyplot as plt
 
