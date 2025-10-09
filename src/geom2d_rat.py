@@ -1066,6 +1066,13 @@ class Triangle:
         self.A = A
         self.B = B
         self.C = C
+        self.points = [self.A, self.B, self.C]
+
+        # Create sides.
+        self.AB = Segment(self.A, self.B)
+        self.BC = Segment(self.B, self.C)
+        self.AC = Segment(self.A, self.C)
+        self.sides = [self.AB, self.BC, self.AC]
 
     #-----------------------------------------------------------------------------------------------
 
@@ -1080,51 +1087,6 @@ class Triangle:
         """
 
         return f'Tri<{self.A}, {self.B}, {self.C}>'
-
-    #-----------------------------------------------------------------------------------------------
-
-    @property
-    def ab(self):
-        """
-        AB side.
-
-        Returns
-        -------
-        Segment
-            AB side.
-        """
-
-        return Segment(self.A, self.B)
-
-    #-----------------------------------------------------------------------------------------------
-
-    @property
-    def bc(self):
-        """
-        BC side.
-
-        Returns
-        -------
-        Segment
-            BC side.
-        """
-
-        return Segment(self.B, self.C)
-
-    #-----------------------------------------------------------------------------------------------
-
-    @property
-    def ac(self):
-        """
-        AC side.
-
-        Returns
-        -------
-        Segment
-            AC side.
-        """
-
-        return Segment(self.A, self.C)
 
     #-----------------------------------------------------------------------------------------------
 
@@ -1144,12 +1106,13 @@ class Triangle:
             Points size.
         """
 
-        self.ab.draw(plt, color=color, linewidth=linewidth, size=0)
-        self.bc.draw(plt, color=color, linewidth=linewidth, )
-        self.ac.draw(plt, color=color, linewidth=linewidth)
-        self.A.draw(plt, color=color, size=size)
-        self.B.draw(plt, color=color, size=size)
-        self.C.draw(plt, color=color, size=size)
+        # First draw sides without ends.
+        for s in self.sides:
+            s.draw(plt, color=color, linewidth=linewidth, size=0)
+
+        # Then draw points.
+        for p in self.points:
+            p.draw(plt, color=color, size=size)
 
     #-----------------------------------------------------------------------------------------------
 
@@ -1177,9 +1140,9 @@ class Triangle:
         for i in range(pn):
             for j in range(i + 1, pn):
                 segments_all.add_unique(Segment(ps[i], ps[j]))
-        segments_all.add_unique(self.ab)
-        segments_all.add_unique(self.ac)
-        segments_all.add_unique(self.bc)
+        segments_all.add_unique(self.AB)
+        segments_all.add_unique(self.AC)
+        segments_all.add_unique(self.BC)
         for i in range(pn):
             segments_all.add_unique(Segment(ps[i], self.A))
             segments_all.add_unique(Segment(ps[i], self.B))
