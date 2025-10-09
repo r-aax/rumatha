@@ -210,7 +210,7 @@ class Point:
             False - otherwise.
         """
 
-        return (self == s.a) or (self == s.b)
+        return (self == s.A) or (self == s.B)
 
 #===================================================================================================
 
@@ -338,7 +338,7 @@ class Segment:
 
     #-----------------------------------------------------------------------------------------------
 
-    def __init__(self, a, b):
+    def __init__(self, A, B):
         """
         Constructor.
 
@@ -346,15 +346,15 @@ class Segment:
 
         Parameters
         ----------
-        a : Point
+        A : Point
             A point.
-        b : Point
+        B : Point
             B point.
         """
 
-        assert a != b
-        self.a = a
-        self.b = b
+        assert A != B
+        self.A = A
+        self.B = B
         self.sort_points()
 
     #-----------------------------------------------------------------------------------------------
@@ -375,7 +375,7 @@ class Segment:
             False - otherwise.
         """
 
-        return ((self.a == s.a) and (self.b == s.b)) or ((self.a == s.b) and (self.b == s.a))
+        return ((self.A == s.A) and (self.B == s.B)) or ((self.A == s.B) and (self.B == s.A))
 
     #-----------------------------------------------------------------------------------------------
 
@@ -409,7 +409,7 @@ class Segment:
             String representation.
         """
 
-        return f'Segm[{self.a}, {self.b}]'
+        return f'Segm[{self.A}, {self.B}]'
 
     #-----------------------------------------------------------------------------------------------
 
@@ -429,12 +429,12 @@ class Segment:
             Size of point.
         """
 
-        x = [self.a.x, self.b.x]
-        y = [self.a.y, self.b.y]
+        x = [self.A.x, self.B.x]
+        y = [self.A.y, self.B.y]
         if linewidth != '0':
             plt.plot(x, y, color=color, linewidth=linewidth)
-        self.a.draw(plt, color=color, size=size)
-        self.b.draw(plt, color=color, size=size)
+        self.A.draw(plt, color=color, size=size)
+        self.A.draw(plt, color=color, size=size)
 
     #-----------------------------------------------------------------------------------------------
 
@@ -448,7 +448,7 @@ class Segment:
             Square of length.
         """
 
-        return (self.a.x - self.b.x)**2 + (self.a.y - self.b.y)**2
+        return (self.A.x - self.B.x)**2 + (self.A.y - self.B.y)**2
 
     #-----------------------------------------------------------------------------------------------
 
@@ -487,8 +487,8 @@ class Segment:
             True - if intersects, False - otherwise.
         """
 
-        line = Line.from_points(self.a, self.b)
-        s_line = Line.from_points(s.a, s.b)
+        line = Line.from_points(self.A, self.B)
+        s_line = Line.from_points(s.A, s.B)
 
         return self.is_intersects_with_line(s_line) and s.is_intersects_with_line(line)
 
@@ -519,18 +519,18 @@ class Segment:
             s_line = Line.from_segment(s)
             if line == s_line:
                 # Two segments lie on one line.
-                assert self.a < self.b
-                assert s.a < s.b
-                if self.b == s.a:
-                    return self.b
-                elif s.b == self.a:
-                    return s.b
-                elif (self.b < s.a) or (s.b < self.a):
+                assert self.A < self.B
+                assert s.A < s.B
+                if self.B == s.A:
+                    return self.B
+                elif s.B == self.A:
+                    return s.B
+                elif (self.B < s.A) or (s.B < self.A):
                     return None
-                elif self.b > s.a:
-                    return Segment(s.a, self.b)
-                elif s.b > self.a:
-                    return Segment(self.a, s.b)
+                elif self.B > s.A:
+                    return Segment(s.A, self.B)
+                elif s.B > self.A:
+                    return Segment(self.A, s.B)
                 else:
                     assert False
             else:
@@ -543,8 +543,8 @@ class Segment:
         Sort points.
         """
 
-        if self.a > self.b:
-            self.a, self.b = self.b, self.a
+        if self.A > self.B:
+            self.A, self.B = self.B, self.A
 
 #===================================================================================================
 
@@ -703,8 +703,8 @@ class Segments:
         for i in range(n):
             s = self.items[i]
             ps = pss[i]
-            ps.add_unique(s.a)
-            ps.add_unique(s.b)
+            ps.add_unique(s.A)
+            ps.add_unique(s.B)
             ps.sort()
 
         # Create new list of segments.
@@ -733,8 +733,8 @@ class Segments:
         ps = Points()
 
         for s in self.items:
-            ps.add_unique(s.a)
-            ps.add_unique(s.b)
+            ps.add_unique(s.A)
+            ps.add_unique(s.B)
 
         return ps
 
@@ -782,7 +782,7 @@ class Line:
     #-----------------------------------------------------------------------------------------------
 
     @staticmethod
-    def from_points(a, b):
+    def from_points(A, B):
         """
         Create line from two points.
 
@@ -792,9 +792,9 @@ class Line:
 
         Parameters
         ----------
-        a : Point
+        A : Point
             A point.
-        b : Point
+        B : Point
             B point.
 
         Returns
@@ -803,11 +803,11 @@ class Line:
             Result line.
         """
 
-        x1, y1, x2, y2 = a.x, a.y, b.x, b.y
+        x1, y1, x2, y2 = A.x, A.y, B.x, B.y
 
         if y1 == y2:
             if x1 == x2:
-                raise Exception(f'Line from a = {a}, b = {b} can not be constructed')
+                raise Exception(f'Line from A = {A}, B = {B} can not be constructed')
             else:
                 return Line(a=Fr(0), b=Fr(1), c=-y1)
         else:
@@ -834,7 +834,7 @@ class Line:
             Result line.
         """
 
-        return Line.from_points(s.a, s.b)
+        return Line.from_points(s.A, s.B)
 
     #-----------------------------------------------------------------------------------------------
 
@@ -970,7 +970,7 @@ class Line:
             False - otherwise.
         """
 
-        return not self.is_two_points_strong_on_one_side(s.a, s.b)
+        return not self.is_two_points_strong_on_one_side(s.A, s.B)
 
     #-----------------------------------------------------------------------------------------------
 
@@ -1049,23 +1049,23 @@ class Triangle:
 
     #-----------------------------------------------------------------------------------------------
 
-    def __init__(self, a, b, c):
+    def __init__(self, A, B, C):
         """
         Constructor.
 
         Parameters
         ----------
-        a : Point
+        A : Point
             A point.
-        b : Point
+        B : Point
             B point.
-        c : Point
+        C : Point
             C point.
         """
 
-        self.a = a
-        self.b = b
-        self.c = c
+        self.A = A
+        self.B = B
+        self.C = C
 
     #-----------------------------------------------------------------------------------------------
 
@@ -1079,7 +1079,7 @@ class Triangle:
             String representation.
         """
 
-        return f'Tri<{self.a}, {self.b}, {self.c}>'
+        return f'Tri<{self.A}, {self.B}, {self.C}>'
 
     #-----------------------------------------------------------------------------------------------
 
@@ -1094,7 +1094,7 @@ class Triangle:
             AB side.
         """
 
-        return Segment(self.a, self.b)
+        return Segment(self.A, self.B)
 
     #-----------------------------------------------------------------------------------------------
 
@@ -1109,7 +1109,7 @@ class Triangle:
             BC side.
         """
 
-        return Segment(self.b, self.c)
+        return Segment(self.B, self.C)
 
     #-----------------------------------------------------------------------------------------------
 
@@ -1124,7 +1124,7 @@ class Triangle:
             AC side.
         """
 
-        return Segment(self.a, self.c)
+        return Segment(self.A, self.C)
 
     #-----------------------------------------------------------------------------------------------
 
@@ -1144,12 +1144,12 @@ class Triangle:
             Points size.
         """
 
-        self.ab.draw(plt, color=color, linewidth=linewidth)
-        self.bc.draw(plt, color=color, linewidth=linewidth)
+        self.ab.draw(plt, color=color, linewidth=linewidth, size=0)
+        self.bc.draw(plt, color=color, linewidth=linewidth, )
         self.ac.draw(plt, color=color, linewidth=linewidth)
-        self.a.draw(plt, color=color, size=size)
-        self.b.draw(plt, color=color, size=size)
-        self.c.draw(plt, color=color, size=size)
+        self.A.draw(plt, color=color, size=size)
+        self.B.draw(plt, color=color, size=size)
+        self.C.draw(plt, color=color, size=size)
 
     #-----------------------------------------------------------------------------------------------
 
@@ -1181,9 +1181,9 @@ class Triangle:
         segments_all.add_unique(self.ac)
         segments_all.add_unique(self.bc)
         for i in range(pn):
-            segments_all.add_unique(Segment(ps[i], self.a))
-            segments_all.add_unique(Segment(ps[i], self.b))
-            segments_all.add_unique(Segment(ps[i], self.c))
+            segments_all.add_unique(Segment(ps[i], self.A))
+            segments_all.add_unique(Segment(ps[i], self.B))
+            segments_all.add_unique(Segment(ps[i], self.C))
         segments_all.sort(fun=lambda s: s.mod2())
 
         # Create triangulation segments.
