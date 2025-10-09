@@ -618,6 +618,117 @@ class Plane:
         self.c = c
         self.d = d
 
+    #-----------------------------------------------------------------------------------------------
+
+    @staticmethod
+    def from_points(A, B, C):
+        """
+        Create plane from three points.
+
+        Types of plane:
+        1) General type plane: a = 1, b, c, d.
+
+        Parameters
+        ----------
+        A : Point
+            A Point.
+        B : Point
+            B Point.
+        C : Point
+            C Point.
+
+        Returns
+        -------
+        Plane
+            Result plane.
+        """
+
+        # General case
+        # Ax + b Ay + c Az + d = 0 // (1)
+        # Bx + b By + c Bz + d = 0 // (2)
+        # Cx + b Cy + c Cz + d = 0 // (3)
+        # we take a = 1
+        a = Fr(1)
+
+        # Subtract (1) - (2)
+        # (Ax - Bx) + b (Ay - By) + c (Az - Bz) = 0           // (4)
+        # b = (Bz - Az) / (Ay - By) c + (Bx - Ax) / (Ay - By)
+        # b = kbc c + kb                                      // (5)
+        kbc = (B.z - A.z) / (A.y - B.y)
+        kb = (B.x - A.x) / (A.y - B.y)
+
+        # Place (5) into (2)
+        # Bx + (kbc c + kb) By + c Bz + d = 0 // (6)
+        # -d = (kbc By + Bz) c + (kb By + Bx)
+        # d = -(kbc By + Bz) c - (kb By + Bx)
+        # d = kdc c + kd                      // (7)
+        kdc = -(kbc * B.y + B.z)
+        kd = -(kb * B.y + B.x)
+
+        # Place (5), (7) into (3)
+        # Cx + (kbc c + kb) Cy + c Cz + (kdc c + kd) = 0
+        # (kbc Cy + kdc + Cz) c + (kb Cy + kd + Cx) = 0
+        # c = -(kb Cy + kd + Cx) / (kbc Cy + kdc + Cz)
+        c = -(kb * C.y + kd + C.x) / (kbc * C.y + kdc + C.z)
+        d = kdc * c + kd
+        b = kbc * c + kb
+
+        return Plane(a, b, c, d)
+
+    #-----------------------------------------------------------------------------------------------
+
+    def __eq__(self, p):
+        """
+        Check equal with another plane.
+
+        Parameters
+        ----------
+        p : Plane
+            Plane.
+
+        Returns
+        -------
+        bool
+            True - if equal to another plane,
+            False - otherwise.
+        """
+
+        return (self.a == p.a) and (self.b == p.b) and (self.c == p.c) and (self.d == p.d)
+
+    #-----------------------------------------------------------------------------------------------
+
+    def __ne__(self, p):
+        """
+        Check not equal with another plane.
+
+        Parameters
+        ----------
+        p : Plane
+            Plane.
+
+        Returns
+        -------
+        bool
+            True - if not equal to another plane,
+            False - otherwise.
+        """
+
+        return not (self == p)
+
+    #-----------------------------------------------------------------------------------------------
+
+    def __repr__(self):
+        """
+        String representation.
+
+        Returns
+        -------
+        str
+            String representation.
+        """
+
+        return f'Plane ({self.a} x + {self.b} y + {self.c} z + {self.d})'
+
 #===================================================================================================
 
 def test():
@@ -631,5 +742,11 @@ def test():
 
 if __name__ == '__main__':
     test()
+
+    A = Point(Fr(1), Fr(0), Fr(0))
+    B = Point(Fr(0), Fr(1), Fr(0))
+    C = Point(Fr(0), Fr(0), Fr(1))
+    pl = Plane.from_points(A, B, C)
+    print(pl)
 
 #===================================================================================================
