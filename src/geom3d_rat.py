@@ -206,6 +206,25 @@ class Point:
             #Ignore z coordinate.
             plt.scatter(self.x, self.y, color=color, s=size)
 
+    #-----------------------------------------------------------------------------------------------
+
+    def __sub__(self, p):
+        """
+        Two points difference.
+
+        Parameters
+        ----------
+        p : Point
+            Point.
+
+        Returns
+        -------
+        Vector
+            Two points difference.
+        """
+
+        return Vector(self.x - p.x, self.y - p.y, self.z - p.z)
+
 #===================================================================================================
 
 class Vector(Point):
@@ -226,6 +245,44 @@ class Vector(Point):
         """
 
         return f'V({self.x}, {self.y}, {self.z})'
+
+    #-----------------------------------------------------------------------------------------------
+
+    def __add__(self, v):
+        """
+        Add two vectors.
+
+        Parameters
+        ----------
+        v : Vector.
+            Vector.
+
+        Returns
+        -------
+        Vector
+            New vector.
+        """
+
+        return Vector(self.x + v.x, self.y + v.y, self.z + v.z)
+
+    #-----------------------------------------------------------------------------------------------
+
+    def __sub__(self, v):
+        """
+        Subtract two vectors.
+
+        Parameters
+        ----------
+        v : Vector
+            Vector.
+
+        Returns
+        -------
+        Vector
+            New vector.
+        """
+
+        return Vector(self.x - v.x, self.y - v.y, self.z - v.z)
 
 #===================================================================================================
 
@@ -891,6 +948,66 @@ class Plane:
 
 #===================================================================================================
 
+class Triangle:
+    """
+    Triangle in space.
+    """
+
+    #-----------------------------------------------------------------------------------------------
+
+    def __init__(self, A, B, C):
+        """
+        Constructor.
+
+        Parameters
+        ----------
+        A : Point
+            A Point.
+        B : Point
+            B Point.
+        C : Point
+            C Point.
+        """
+
+        self.A = A
+        self.B = B
+        self.C = C
+        self.points = [self.A, self.B, self.C]
+
+        # Init sides at a time.
+        self.AB = Segment(self.A, self.B)
+        self.BC = Segment(self.B, self.C)
+        self.AC = Segment(self.A, self.C)
+        self.sides = [self.AB, self.BC, self.AC]
+
+    #-----------------------------------------------------------------------------------------------
+
+    def draw(self, plt, color='black', linewidth='2', size=20):
+        """
+        Draw on plot.
+
+        Parameters
+        ----------
+        plt : Plot
+            Plot.
+        color : str
+            Color.
+        linewidth : str
+            Color.
+        size : int
+            Size.
+        """
+
+        # First draw sides without points.
+        for s in self.sides:
+            s.draw(plt, color=color, linewidth=linewidth, size=0)
+
+        # Then draw points over sides.
+        for p in self.points:
+            p.draw(plt, color=color, size=size)
+
+#===================================================================================================
+
 def test():
     """
     Tests.
@@ -908,7 +1025,10 @@ if __name__ == '__main__':
     C = Point(Fr(0), Fr(0), Fr(1))
     pl = Plane.from_points(A, B, C)
     print(pl)
-    ln = Line.from_point_and_vector(A, Vector(Fr(1), Fr(1), Fr(1)))
+    ln = Line.from_point_and_vector(A, B - A)
     print(ln)
+    tr = Triangle(A, B, C)
+    tr.draw(plt)
+    plt.show()
 
 #===================================================================================================
