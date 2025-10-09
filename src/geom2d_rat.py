@@ -809,11 +809,9 @@ class Line:
             if x1 == x2:
                 raise Exception(f'Line from a = {a}, b = {b} can not be constructed')
             else:
-                # coefficients must be initialized with int values
-                # (for compatibility with both floats and Fractions)
-                return Line(a=0, b=1, c=-y1)
+                return Line(a=Fr(0), b=Fr(1), c=-y1)
         else:
-            ka = 1
+            ka = Fr(1)
             kb = (x2 - x1) / (y1 - y2)
             kc = (x1 * y2 - x2 * y1) / (y1 - y2)
             return Line(a=ka, b=kb, c=kc)
@@ -905,7 +903,7 @@ class Line:
 
         Returns
         -------
-        number
+        Fraction
             Value of the point according to the line.
         """
 
@@ -915,7 +913,7 @@ class Line:
 
     def is_have_point(self, p):
         """
-        Check if line has  point.
+        Check if line has point.
 
         Parameters
         ----------
@@ -925,7 +923,8 @@ class Line:
         Returns
         -------
         bool
-            True - if line has point, False - otherwise.
+            True - if line has point,
+            False - otherwise.
         """
 
         return self.val(p) == 0
@@ -947,7 +946,8 @@ class Line:
         Returns
         -------
         bool
-            True - if two points lie on one side of the line, False - otherwise.
+            True - if two points lie on one side of the line,
+            False - otherwise.
         """
 
         return self.val(p1) * self.val(p2) > 0
@@ -966,7 +966,8 @@ class Line:
         Returns
         -------
         bool
-            True - if there is intersection, False - otherwise.
+            True - if there is intersection,
+            False - otherwise.
         """
 
         return not self.is_two_points_strong_on_one_side(s.a, s.b)
@@ -985,7 +986,8 @@ class Line:
         Returns
         -------
         bool
-            True - if there is intersection, False - otherwise.
+            True - if there is intersection,
+            False - otherwise.
         """
 
         if (self.a == line.a) and (self.b == line.b):

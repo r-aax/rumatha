@@ -208,6 +208,27 @@ class Point:
 
 #===================================================================================================
 
+class Vector(Point):
+    """
+    Class vector.
+    """
+
+    #-----------------------------------------------------------------------------------------------
+
+    def __repr__(self):
+        """
+        String representation.
+
+        Returns
+        -------
+        str
+            String representation.
+        """
+
+        return f'V({self.x}, {self.y}, {self.z})'
+
+#===================================================================================================
+
 class Points:
     """
     Points.
@@ -590,6 +611,84 @@ class Segments:
 
 #===================================================================================================
 
+class Line:
+    """
+    Line in space.
+    """
+
+    #-----------------------------------------------------------------------------------------------
+
+    def __init__(self, x0, y0, z0, m, n, p):
+        """
+        Line constructor.
+
+        (x - x0) / m = (y - y0) / n = (z - z0) / z
+
+        Parameters
+        ----------
+        x0 : Fraction
+            X coordinate of base point.
+        y0 : Fraction
+            Y coordinate of base point.
+        z0 : Fraction
+            Z coordinate of base point.
+        m : Fraction
+            Parameter for X direction.
+        n : Fraction
+            Parameter for Y direction.
+        p : Fraction
+            Parameter for Z direction.
+        """
+
+        self.x0 = x0
+        self.y0 = y0
+        self.z0 = z0
+        self.m = m
+        self.n = n
+        self.p = p
+
+    #-----------------------------------------------------------------------------------------------
+
+    @staticmethod
+    def from_point_and_vector(p, v):
+        """
+        Constructor from point and vector.
+
+        Parameters
+        ----------
+        p : Point
+            Base point.
+        v : Vector
+            Direction vector.
+
+        Returns
+        -------
+        Line
+            Constructed line.
+        """
+
+        print(p)
+        print(v)
+
+        return Line(p.x, p.y, p.z, v.x, v.y, v.z)
+
+    #-----------------------------------------------------------------------------------------------
+
+    def __repr__(self):
+        """
+        String representation.
+
+        Returns
+        -------
+        str
+            String representation.
+        """
+
+        return f'Line ((x - {self.x0}) / {self.m} = (y - {self.y0}) / {self.n} '\
+               f'= (z - {self.z0}) / {self.p})'
+
+#===================================================================================================
+
 class Plane:
     """
     Plane.
@@ -729,6 +828,67 @@ class Plane:
 
         return f'Plane ({self.a} x + {self.b} y + {self.c} z + {self.d})'
 
+    #-----------------------------------------------------------------------------------------------
+
+    def val(self, p):
+        """
+        Value of point.
+
+        Parameters
+        ----------
+        p : Point
+            Point.
+
+        Returns
+        -------
+        Fraction
+            Value.
+        """
+
+        return self.a * p.x + self.b * p.y + self.c * p.z + self.d
+
+    #-----------------------------------------------------------------------------------------------
+
+    def is_have_point(self, p):
+        """
+        Check if plane has point.
+
+        Parameters
+        ----------
+        p : Point
+            Point.
+
+        Returns
+        -------
+        bool
+            True - if plane has point,
+            False - otherwise.
+        """
+
+        return self.val(p) == 0
+
+    #-----------------------------------------------------------------------------------------------
+
+    def is_two_points_strong_on_one_side(self, p1, p2):
+        """
+        Check if two points strong on one side.
+
+        Parameters
+        ----------
+        p1 : Point
+            First point.
+        p2 : Point
+            Second point.
+
+        Returns
+        -------
+        bool
+            True - if two points on one side of plane,
+            False - otherwise.
+        """
+
+        return self.val(p1) * self.val(p2) > 0
+
 #===================================================================================================
 
 def test():
@@ -748,5 +908,7 @@ if __name__ == '__main__':
     C = Point(Fr(0), Fr(0), Fr(1))
     pl = Plane.from_points(A, B, C)
     print(pl)
+    ln = Line.from_point_and_vector(A, Vector(Fr(1), Fr(1), Fr(1)))
+    print(ln)
 
 #===================================================================================================
