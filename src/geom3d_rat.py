@@ -459,6 +459,20 @@ class Points:
 
     #-----------------------------------------------------------------------------------------------
 
+    def __repr__(self):
+        """
+        String representation.
+
+        Returns
+        -------
+        str
+            String representation.
+        """
+
+        return f'Points{self.items}'
+
+    #-----------------------------------------------------------------------------------------------
+
     def draw(self, plt, color='black', size=20):
         """
         Draw on plot.
@@ -859,7 +873,35 @@ class Line:
             Parameter for Z direction.
         """
 
-        assert (m != 0) or (n != 0) or (p != 0)
+        # Normalize vector.
+        if m != 0:
+            n = n / m
+            p = p / m
+            m = Fr(1)
+        elif n != 0:
+            p = p / n
+            n = Fr(1)
+        else:
+            assert p != 0
+            p = Fr(1)
+
+        # Normalize point.
+        if m != 0:
+            t = -x0 / m
+            y0 = y0 + t * n
+            z0 = z0 + t * p
+            x0 = Fr(0)
+        elif n != 0:
+            t = -y0 / n
+            x0 = x0 + t * m
+            z0 = z0 + t * p
+            y0 = Fr(0)
+        else:
+            assert p != 0
+            t = -z0 / p
+            x0 = x0 + t * m
+            y0 = y0 + t * n
+            z0 = Fr(0)
 
         self.x0 = x0
         self.y0 = y0
@@ -934,6 +976,47 @@ class Line:
 
     #-----------------------------------------------------------------------------------------------
 
+    def __eq__(self, line):
+        """
+        Check equal.
+
+        Parameters
+        ----------
+        line : Line
+            Line.
+
+        Returns
+        -------
+        bool
+            True - if lines are equal,
+            False - otherwise.
+        """
+
+        return (self.x0 == line.x0) and (self.y0 == line.y0) and (self.z0 == line.z0) \
+               and (self.m == line.m) and (self.n == line.n) and (self.p == line.p)
+
+    #-----------------------------------------------------------------------------------------------
+
+    def __ne__(self, line):
+        """
+        Check not equal.
+
+        Parameters
+        ----------
+        line : Line
+            Line.
+
+        Returns
+        -------
+        bool
+            True - if lines are not equal,
+            False - otherwise.
+        """
+
+        return not (self == line)
+
+    #-----------------------------------------------------------------------------------------------
+
     def __repr__(self):
         """
         String representation.
@@ -980,6 +1063,33 @@ class Line:
             return (x == x0 + t * m) and (y == y0 + t * n)
         else:
             assert False
+
+    #-----------------------------------------------------------------------------------------------
+
+    def intersection_with_line(self, line):
+        """
+        Find intersection with line.
+
+        Parameters
+        ----------
+        line : Line
+            Line.
+
+        Returns
+        -------
+        None
+            No intersection.
+        Point
+            Intersection in one point.
+        Line
+            If it is the same line.
+        """
+
+        # First check for equal.
+        if self == line:
+            return line
+
+        assert False
 
 #===================================================================================================
 
@@ -1599,6 +1709,101 @@ class Triangle:
         else:
             assert False
 
+    #-----------------------------------------------------------------------------------------------
+
+    def intersection_with_segment(self, s):
+        """
+        Find intersection with segment.
+
+        Parameters
+        ----------
+        s : Segment
+            Segment.
+
+        Returns
+        -------
+        None
+            There is non intersection.
+        Point
+            If there is only one point intersection.
+        Segment
+            If intersection is performed by segment.
+        """
+
+        # Take containing objects.
+        psi = self.plane.intersection_with_segment(s)
+
+        # No intersection segment with plane.
+        if psi is None:
+            return None
+
+        # There is intersection of plane and segment.
+        if isinstance(psi, Point):
+
+            # Intersection is point.
+            p = psi
+
+            # Return point only if it lies inside the triangle.
+            if self.is_have_point(p):
+                return p
+            else:
+                return None
+
+        elif isinstance(psi, Segment):
+
+            # Intersection of plane and segment is segment itself,
+            # because it lies in the plane.
+            # TODO: we can not keep it.
+            assert False
+
+        else:
+            assert False
+
+    #-----------------------------------------------------------------------------------------------
+
+    def intersection_with_triangle(self, t):
+        """
+        Find intersection with another triangle.
+
+        Parameters
+        ----------
+        t : Triangle
+            Triangle.
+
+        Returns
+        -------
+        [Point]
+            Set of points, which form convex full.
+            May contain points from 0 to 6.
+            0 - no intersection,
+            1 - one point,
+            2 - single segment,
+            3 - triangle,
+            4 - convex quadrangle,
+            5 - convex pentagon,
+            6 - convex hexagon.
+        """
+
+        ps = Points()
+
+        for s in self.sides:
+            r = t.intersection_with_segment(s)
+            if isinstance(r, Point):
+                ps.add_unique(r)
+            elif isinstance(r, Segment):
+                ps.add_unique(r.A)
+                ps.add_unique(r.B)
+
+        for s in t.sides:
+            r = self.intersection_with_segment(s)
+            if isinstance(r, Point):
+                ps.add_unique(r)
+            elif isinstance(r, Segment):
+                ps.add_unique(r.A)
+                ps.add_unique(r.B)
+
+        return ps
+
 #===================================================================================================
 
 # Global objects.
@@ -1609,6 +1814,7 @@ Z = Point(Fr(0), Fr(0), Fr(1))
 OX = Line.from_points(O, X)
 OY = Line.from_points(O, Y)
 OZ = Line.from_points(O, Z)
+XY = Line.from_points(X, Y)
 OXY = Plane.from_points(O, X, Y)
 OYZ = Plane.from_points(O, Y, Z)
 OXZ = Plane.from_points(O, X, Z)
@@ -1621,7 +1827,7 @@ def test():
     Tests.
     """
 
-    # Perpedicular planes.
+    # Perpendicular planes.
     assert OXY.is_perpendicular_with_plane(OYZ)
     assert OXY.is_perpendicular_with_plane(OXZ)
     assert OYZ.is_perpendicular_with_plane(OXZ)
@@ -1633,6 +1839,9 @@ def test():
     assert OXY.intersection_with_line(OX) == OX
     assert OYZ.intersection_with_line(OY) == OY
     assert OXZ.intersection_with_line(OZ) == OZ
+
+    # Check equal lines.
+    assert OX == Line.from_points(O, Point(Fr(2), Fr(0), Fr(0)))
 
     # Check point on segment.
     SOX = Segment(O, X)
@@ -1647,6 +1856,26 @@ def test():
     assert TXYZ.is_have_point(Point(Fr(2, 5), Fr(2, 5), Fr(1, 5)))
     assert not TXYZ.is_have_point(Point(Fr(2, 3), Fr(2, 3), Fr(-1, 3)))
     assert not TXYZ.is_have_point(Point(Fr(-1), Fr(-1), Fr(-1)))
+
+    # Check lines intersections.
+    assert OX.intersection_with_line(OY) == O
+    assert OX.intersection_with_line(OZ) == O
+
+    # Check triangles intersection.
+    tri1 = Triangle(Point(Fr(0), Fr(0), Fr(0)),
+                    Point(Fr(0), Fr(2), Fr(0)),
+                    Point(Fr(2), Fr(1), Fr(0)))
+    tri2 = Triangle(Point(Fr(0), Fr(1), Fr(0.1)),
+                    Point(Fr(1), Fr(0), Fr(-0.1)),
+                    Point(Fr(1), Fr(2), Fr(-0.1)))
+    print(tri1.intersection_with_triangle(tri2))
+    tri1 = Triangle(Point(Fr(0), Fr(0), Fr(0)),
+                    Point(Fr(0), Fr(2), Fr(0)),
+                    Point(Fr(2), Fr(1), Fr(0)))
+    tri2 = Triangle(Point(Fr(1), Fr(1), Fr(0)),
+                    Point(Fr(3), Fr(0), Fr(0)),
+                    Point(Fr(3), Fr(2), Fr(0)))
+    print(tri1.intersection_with_triangle(tri2))
 
 #---------------------------------------------------------------------------------------------------
 

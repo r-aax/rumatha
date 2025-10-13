@@ -1399,5 +1399,13 @@ if __name__ == '__main__':
         for j in range(i + 1, n):
             print(f'i = {i}, j = {j}')
             print(f'    {ts[i]} - {ts[j]}')
+            r = ts[i].intersection_with_triangle(ts[j])
+            print(f'    {r}')
+
+            # for test
+            break
+
+        # for test
+        break
 
 # ==================================================================================================
