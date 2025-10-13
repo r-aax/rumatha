@@ -225,6 +225,28 @@ class Point:
 
         return Vector(self.x - p.x, self.y - p.y, self.z - p.z)
 
+    #-----------------------------------------------------------------------------------------------
+
+    def is_between(self, A, B):
+        """
+        Check if point is between two points.
+
+        Parameters
+        ----------
+        A : Point
+            Point.
+        B : Point
+            Point.
+
+        Returns
+        -------
+        bool
+            True - if point is between A and B,
+            False - otherwise.
+        """
+
+        return ((A <= self) and (self <= B)) or ((B <= self) and (self <= A))
+
 #===================================================================================================
 
 class Vector(Point):
@@ -533,6 +555,28 @@ class Segment:
 
     #-----------------------------------------------------------------------------------------------
 
+    def is_have_point(self, p):
+        """
+        Check if segment has point.
+
+        Parameters
+        ----------
+        p : Point
+            Point.
+
+        Returns
+        -------
+        bool
+            True - if segment has point.
+            False - otherwise.
+        """
+
+        line = Line.from_segment(self)
+
+        return line.is_have_point(p) and p.is_between(self.A, self.B)
+
+    #-----------------------------------------------------------------------------------------------
+
     def sort_points(self):
         """
         Sort points.
@@ -754,6 +798,26 @@ class Line:
 
     #-----------------------------------------------------------------------------------------------
 
+    @staticmethod
+    def from_segment(s):
+        """
+        Constructor from segment.
+
+        Parameters
+        ----------
+        s : Segment
+            Segment.
+
+        Returns
+        -------
+        Line
+            Constructed line.
+        """
+
+        return Line.from_points(s.A, s.B)
+
+    #-----------------------------------------------------------------------------------------------
+
     def __repr__(self):
         """
         String representation.
@@ -767,6 +831,39 @@ class Line:
         return f'Line(x = {self.x0} + t * {self.m}, '\
                f'y = {self.y0} + t * {self.n}, '\
                f'z = {self.z0} + t * {self.p})'
+
+    #-----------------------------------------------------------------------------------------------
+
+    def is_have_point(self, p):
+        """
+        Check if line has point.
+
+        Parameters
+        ----------
+        p : Point
+            Point.
+
+        Returns
+        -------
+        bool
+            True - if line has point,
+            False - otherwise.
+        """
+
+        x, y, z = p.x, p.y, p.z
+        x0, y0, z0, m, n, p = self.x0, self.y0, self.z0, self.m, self.n, self.p
+
+        if m != 0:
+            t = (x - x0) / m
+            return (y == y0 + t * n) and (z == z0 + t * p)
+        elif n != 0:
+            t = (y - y0) / n
+            return (x == x0 + t * m) and (z == z0 + t * p)
+        elif p != 0:
+            t = (z - z0) / p
+            return (x == x0 + t * m) and (y == y0 + t * n)
+        else:
+            assert False
 
 #===================================================================================================
 
@@ -1289,7 +1386,12 @@ def test():
     assert OYZ.intersection_with_line(OY) == OY
     assert OXZ.intersection_with_line(OZ) == OZ
 
-    # Test point belongs to triangle.
+    # Check point on segment.
+    SOX = Segment(O, X)
+    assert SOX.is_have_point(O)
+    assert SOX.is_have_point(Point(Fr(1, 2), Fr(0), Fr(0)))
+    assert not SOX.is_have_point(Y)
+    assert not SOX.is_have_point(Point(Fr(3, 2), Fr(0), Fr(0)))
 
 #---------------------------------------------------------------------------------------------------
 
