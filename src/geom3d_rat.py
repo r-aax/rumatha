@@ -1083,10 +1083,19 @@ class Plane:
             #   x (a + q) + b y0 + c z0 + d - q x0 = 0
             #   x = (q x0 - b y0 - c z0 - d) / (a + q)
             q = (b * n + c * p) / m
-            x = (q * x0 - b * y0 - c * z0 - d) / (a + q)
+            up, dn = q * x0 - b * y0 - c * z0 - d, a + q
+
+            if dn == 0:
+                if up == 0:
+                    return line
+                else:
+                    return None
+
+            x = up / dn
             t = (x - x0) / m
             y = y0 + t * n
             z = z0 + t * p
+
             return Point(x, y, z)
 
         elif line.n != 0:
@@ -1101,10 +1110,19 @@ class Plane:
             #   y (b + q) + a x0 + c z0 + d - q y0 = 0
             #   y = (q y0 - a x0 - c z0 - d) / (b + q)
             q = (a * m + c * p) / n
-            y = (q * y0 - a * x0 - c * z0 - d) / (b + q)
+            up, dn = q * y0 - a * x0 - c * z0 - d, b + q
+
+            if dn == 0:
+                if up == 0:
+                    return line
+                else:
+                    return None
+
+            y = up / dn
             t = (y - y0) / n
             x = x0 + t * m
             z = z0 + t * p
+
             return Point(x, y, z)
 
         else:
@@ -1121,10 +1139,19 @@ class Plane:
             #   z (c + q) + a x0 + b y0 + d - q z0 = 0
             #   z = (q z0 - a x0 - b y0 - d) / (c + q)
             q = (a * m + b * n) / p
-            z = (q * z0 - a * x0 - b * y0 - d) / (c + q)
+            up, dn = q * z0 - a * x0 - b * y0 - d, c + q
+
+            if dn == 0:
+                if up == 0:
+                    return line
+                else:
+                    return None
+
+            z = up / dn
             t = (z - z0) / p
             x = x0 + t * m
             y = y0 + t * n
+
             return Point(x, y, z)
 
 #===================================================================================================
@@ -1232,6 +1259,9 @@ def test():
     assert XYZ.intersection_with_line(OX) == X
     assert XYZ.intersection_with_line(OY) == Y
     assert XYZ.intersection_with_line(OZ) == Z
+    assert OXY.intersection_with_line(OX) == OX
+    assert OYZ.intersection_with_line(OY) == OY
+    assert OXZ.intersection_with_line(OZ) == OZ
 
 #---------------------------------------------------------------------------------------------------
 
