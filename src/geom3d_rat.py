@@ -2,6 +2,7 @@
 3D geometry in rational coordinates.
 """
 
+import numpy as np
 from fractions import Fraction as Fr
 import geom2d_rat
 import matplotlib.pyplot as plt
@@ -32,6 +33,56 @@ class Point:
         self.x = x
         self.y = y
         self.z = z
+
+    #-----------------------------------------------------------------------------------------------
+
+    @staticmethod
+    def from_real_coords(x, y, z, denom):
+        """
+        Constructor from real coordinates.
+
+        Parameters
+        ----------
+        x : float
+            Real coordinate X.
+        y : float
+            Real coordinate Y.
+        z : float
+            Real coordinate Z.
+        denom : int
+            Denominator.
+
+        Returns
+        -------
+        Point
+            Constructed point.
+        """
+
+        return Point(Fr(int(x * denom), denom),
+                     Fr(int(y * denom), denom),
+                     Fr(int(z * denom), denom))
+
+    #-----------------------------------------------------------------------------------------------
+
+    @staticmethod
+    def from_real_array(ar, denom):
+        """
+        Constructor from real array.
+
+        Parameters
+        ----------
+        ar : np.array
+            Array of coordinates.
+        denom : int
+            Denominator.
+
+        Returns
+        -------
+        Point
+            Constructed point.
+        """
+
+        return Point.from_real_coords(ar[0], ar[1], ar[2], denom)
 
     #-----------------------------------------------------------------------------------------------
 

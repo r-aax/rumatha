@@ -3,6 +3,7 @@ Mesh - Surface Unstructured.
 """
 
 import numpy as np
+import geom3d_rat
 from fractions import Fraction as Fr
 
 #===================================================================================================
@@ -1383,6 +1384,20 @@ if __name__ == '__main__':
 
     # Load mesh.
     m = Mesh('../data/meshes/tetrahedron_2.dat')
-    m.store('out.dat')
+
+    # Get triangles.
+    DENOM = 1
+    ts = []
+    for f in m.faces:
+        ts.append(geom3d_rat.Triangle(geom3d_rat.Point.from_real_array(f.nodes[0].p, DENOM),
+                                      geom3d_rat.Point.from_real_array(f.nodes[1].p, DENOM),
+                                      geom3d_rat.Point.from_real_array(f.nodes[2].p, DENOM)))
+
+    # Calculate triangles intersections.
+    n = len(ts)
+    for i in range(n):
+        for j in range(i + 1, n):
+            print(f'i = {i}, j = {j}')
+            print(f'    {ts[i]} - {ts[j]}')
 
 # ==================================================================================================
