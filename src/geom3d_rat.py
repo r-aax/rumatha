@@ -1353,30 +1353,25 @@ class Triangle:
 
 #===================================================================================================
 
+# Global objects.
+O = Point(Fr(0), Fr(0), Fr(0))
+X = Point(Fr(1), Fr(0), Fr(0))
+Y = Point(Fr(0), Fr(1), Fr(0))
+Z = Point(Fr(0), Fr(0), Fr(1))
+OX = Line.from_points(O, X)
+OY = Line.from_points(O, Y)
+OZ = Line.from_points(O, Z)
+OXY = Plane.from_points(O, X, Y)
+OYZ = Plane.from_points(O, Y, Z)
+OXZ = Plane.from_points(O, X, Z)
+XYZ = Plane.from_points(X, Y, Z)
+
+#===================================================================================================
+
 def test():
     """
     Tests.
     """
-
-    # Base points.
-    O = Point(Fr(0), Fr(0), Fr(0))
-    X = Point(Fr(1), Fr(0), Fr(0))
-    Y = Point(Fr(0), Fr(1), Fr(0))
-    Z = Point(Fr(0), Fr(0), Fr(1))
-    print(O, X, Y, Z)
-
-    # Construct lines from points.
-    OX = Line.from_points(O, X)
-    OY = Line.from_points(O, Y)
-    OZ = Line.from_points(O, Z)
-    print(OX, OY, OZ)
-
-    # Construct planes.
-    OXY = Plane.from_points(O, X, Y)
-    OYZ = Plane.from_points(O, Y, Z)
-    OXZ = Plane.from_points(O, X, Z)
-    XYZ = Plane.from_points(X, Y, Z)
-    print(OXY, OYZ, OXZ, XYZ)
 
     # Intersect plane with line.
     assert XYZ.intersection_with_line(OX) == X

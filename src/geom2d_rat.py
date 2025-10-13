@@ -1073,6 +1073,9 @@ class Triangle:
         self.BC = Segment(self.B, self.C)
         self.AC = Segment(self.A, self.C)
         self.sides = [self.AB, self.BC, self.AC]
+        self.ABline = Line.from_points(self.A, self.B)
+        self.BCline = Line.from_points(self.B, self.C)
+        self.ACline = Line.from_points(self.A, self.C)
 
     #-----------------------------------------------------------------------------------------------
 
@@ -1113,6 +1116,45 @@ class Triangle:
         # Then draw points.
         for p in self.points:
             p.draw(plt, color=color, size=size)
+
+    #-----------------------------------------------------------------------------------------------
+
+    def is_have_point(self, p):
+        """
+        Check if triangle has point.
+
+        Point is inside triangle if for vertex A and size BC:
+        BC.val(p) == BC.val(A)
+        And similar equality is satisfied for B and AC, C and AB.
+
+        Parameters
+        ----------
+        p : Point
+            Point.
+
+        Returns
+        -------
+        bool
+            True - if triangle has point,
+            False - otherwise.
+        """
+
+        if (p == self.A) or (p == self.B) or (p == self.C):
+            return True
+
+        # Points A and p must be on one side from BC line.
+        if not self.BCline.is_two_points_strong_on_one_side(self.A, p):
+            return False
+
+        # Points B and p must be on one side from AC line.
+        if not self.ACline.is_two_points_strong_on_one_side(self.B, p):
+            return False
+
+        # Points C and p must be on one side from AB line.
+        if not self.ABline.is_two_points_strong_on_one_side(self.C, p):
+            return False
+
+        return True
 
     #-----------------------------------------------------------------------------------------------
 
@@ -1184,6 +1226,10 @@ def test():
     assert s.intersection_with_segment(s1) == Point(Fr(5, 2), Fr(5, 2))
     assert not s.is_intersects_with_segment(s2)
     assert s.intersection_with_segment(s2) is None
+
+    # Point in triangle.
+    tri = Triangle(p00, p10, p01)
+    assert tri.is_have_point(Point(Fr(0, 10), Fr(0, 10)))
 
 #---------------------------------------------------------------------------------------------------
 
