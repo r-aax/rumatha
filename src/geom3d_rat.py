@@ -14,7 +14,7 @@ class Point:
 
     #-----------------------------------------------------------------------------------------------
 
-    def __init__(self, x=0, y=0, z=0):
+    def __init__(self, x=Fr(0), y=Fr(0), z=Fr(0)):
         """
         Constructor.
 
@@ -929,7 +929,7 @@ class Plane:
             String representation.
         """
 
-        return f'Plane ({self.a} x + {self.b} y + {self.c} z + {self.d})'
+        return f'Plane({self.a} x + {self.b} y + {self.c} z + {self.d})'
 
     #-----------------------------------------------------------------------------------------------
 
@@ -1014,6 +1014,38 @@ class Plane:
 
     #-----------------------------------------------------------------------------------------------
 
+    def intersection_with_segment(self, s):
+        """
+        Find plane and segment intersection.
+
+        Parameters
+        ----------
+        s : Segment
+            Segment.
+
+        Returns
+        -------
+        None
+            If there is no intersection.
+        Point
+            If there is only point of intersection.
+        Segment
+            If segment lay in plane.
+        """
+
+        # Check for no intersection.
+        if not self.is_intersects_with_segment(s):
+            return None
+
+        # Check if both ends of segment lie in plane.
+        if self.is_have_point(s.A) and self.is_have_point(s.B):
+            return s
+
+        # Intersection point is inside of segment.
+        return self.intersection_with_line(Line.from_points(s.A, s.B))
+
+    #-----------------------------------------------------------------------------------------------
+
     def is_intersects_with_line(self, line):
         """
         Check if plane intersects with line.
@@ -1032,13 +1064,7 @@ class Plane:
 
         # see intersection_with_line
 
-        if line.m != 0:
-            return False
-        elif line.n != 0:
-            assert False
-        else:
-            assert line.p != 0
-            assert False
+        return not (self.intersection_with_line(line) is None)
 
     #-----------------------------------------------------------------------------------------------
 
@@ -1263,8 +1289,11 @@ def test():
     assert OYZ.intersection_with_line(OY) == OY
     assert OXZ.intersection_with_line(OZ) == OZ
 
+    # Test point belongs to triangle.
+
 #---------------------------------------------------------------------------------------------------
 
 if __name__ == '__main__':
     test()
+
 #===================================================================================================
