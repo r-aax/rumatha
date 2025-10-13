@@ -1089,7 +1089,57 @@ class Line:
         if self == line:
             return line
 
-        assert False
+        # Extract coefficients.
+        x1, y1, z1 = self.x0, self.y0, self.z0
+        m1, n1, p1 = self.m, self.n, self.p
+        x2, y2, z2 = line.x0, line.y0, line.z0
+        m2, n2, p2 = line.m, line.n, line.p
+
+        # Linear equations system.
+        # x1 + t1 * m1 = x2 + t2 * m2
+        # y1 + t1 * n1 = y2 + t2 * n2
+        # z1 + t1 * p1 = z2 + t2 * p2
+        # Move all members to left.
+        # t1 * m1 - t2 * m2 + (x1 - x2) = 0
+        # t1 * n1 - t2 * n2 + (y1 - y2) = 0
+        # t1 * p1 - t2 * p2 + (z1 - z2) = 0
+        m2, n2, p2 = -m2, -n2, -p2
+        dx, dy, dz = x1 - x2, y1 - y2, z1 - z2
+
+        # System in simple form.
+        # m1 * t1 + m2 * t2 + dx = 0 // (1)
+        # n1 * t1 + n2 * t2 + dy = 0 // (2)
+        # p1 * t1 + p2 * t2 + dz = 0 // (3)
+
+        # Function for solving each system of 3.
+        def slv2(m1, m2, dx, n1, n2, dy):
+            # (1) * n1 - (2) * m1
+            #   (m2 * n1 - n2 * m1) * t2 + (dx * n1 - dy * m1) = 0
+            #   t2 = (dy * m1 - dx * n1) / q
+            # (1) * n2 - (2) * m2
+            #   (m1 * n2 - n1 * m2) * t1 + (dx * n2 - dy * m2) = 0
+            #   t1 = (dx * n2 - dy * m2) / q
+            q = m2 * n1 - n2 * m1
+            if q == 0:
+                return None
+            else:
+                return  (dx * n2 - dy * m2) / q, (dy * m1 - dx * n1) / q
+
+        # Try to solve system of equations.
+        r = slv2(m1, m2, dx, n1, n2, dy)
+        if r is None:
+            r = slv2(m1, m2, dx, p1, p2, dz)
+            if r is None:
+                r = slv2(n1, n2, dy, p1, p2, dz)
+        t1, t2 = r
+
+        # Try all equations.
+        if (m1 * t1 + m2 * t2 + dx == 0) \
+            and (n1 * t1 + n2 * t2 + dy == 0) \
+            and (p1 * t1 + p2 * t2 + dz == 0):
+            return Point(x1 + t1 * m1, y1 + t1 * n1, z1 + t1 * p1)
+        else:
+            return None
 
 #===================================================================================================
 
