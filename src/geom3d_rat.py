@@ -679,7 +679,9 @@ class Line:
         """
         Line constructor.
 
-        (x - x0) / m = (y - y0) / n = (z - z0) / z
+        x = x0 + tm
+        y = y0 + tn
+        z = z0 + tp
 
         Parameters
         ----------
@@ -724,10 +726,29 @@ class Line:
             Constructed line.
         """
 
-        print(p)
-        print(v)
-
         return Line(p.x, p.y, p.z, v.x, v.y, v.z)
+
+    #-----------------------------------------------------------------------------------------------
+
+    @staticmethod
+    def from_points(p1, p2):
+        """
+        Constructor from two points.
+
+        Parameters
+        ----------
+        p1 : Point
+            First point.
+        p2 : Point
+            Second point.
+
+        Returns
+        -------
+        Line
+            Constructed line.
+        """
+
+        return Line.from_point_and_vector(p1, p2 - p1)
 
     #-----------------------------------------------------------------------------------------------
 
@@ -741,8 +762,9 @@ class Line:
             String representation.
         """
 
-        return f'Line ((x - {self.x0}) / {self.m} = (y - {self.y0}) / {self.n} '\
-               f'= (z - {self.z0}) / {self.p})'
+        return f'Line(x = {self.x0} + t * {self.m}, '\
+               f'y = {self.y0} + t * {self.n}, '\
+               f'z = {self.z0} + t * {self.p})'
 
 #===================================================================================================
 
@@ -946,6 +968,107 @@ class Plane:
 
         return self.val(p1) * self.val(p2) > 0
 
+    #-----------------------------------------------------------------------------------------------
+
+    def is_intersects_with_segment(self, s):
+        """
+        Check if plane intersects with segment.
+
+        Parameters
+        ----------
+        s : Segment
+            Segment.
+
+        Returns
+        -------
+        bool
+            True - if plane intersects segment,
+            False - otherwise.
+        """
+
+        return not self.is_two_points_strong_on_one_side(s.A, s.B)
+
+    #-----------------------------------------------------------------------------------------------
+
+    def is_intersects_with_line(self, line):
+        """
+        Check if plane intersects with line.
+
+        Parameters
+        ----------
+        line : Line
+            Line.
+
+        Returns
+        -------
+        bool
+            True - if plane intersects with line,
+            False - otherwise.
+        """
+
+        # see intersection_with_line
+
+        if line.m != 0:
+            return False
+        elif line.n != 0:
+            assert False
+        else:
+            assert line.p != 0
+            assert False
+
+    #-----------------------------------------------------------------------------------------------
+
+    def intersection_with_line(self, line):
+        """
+        Find intersection with line.
+
+        Parameters
+        ----------
+        line : Line
+            Line.
+
+        Returns
+        -------
+        None
+            If there is no intersection.
+        Point
+            If plane and line intersects by point.
+        Line
+            If line lays in plane.
+        """
+
+        a, b, c, d = self.a, self.b, self.c, self.d
+        x0, y0, z0, m, n, p = line.x0, line.y0, line.z0, line.m, line.n, line.p
+
+        # ax + by + cz + d = 0
+        #   x = x0 + tm
+        #   y = y0 + tn
+        #   z = z0 + tp
+
+        # One of m, n, p is not zero.
+        # case 1. m != 0
+        #   t = (x - x0) / m, y = y0 + (n / m)(x - x0), z = z0 + (p / m)(x - x0)
+        #   ax + b (y0 + (n / m)(x - x0)) + c(z0 + (p / m)(x - x0)) + d = 0
+        #   ax + b y0 + (bn / m)(x - x0) + c z0 + (cp / m)(x - x0) + d = 0
+        #   ax + b y0 + (bn / m)x - (bn / m)x0 + c z0 + (cp / m)x - (cp / m)x0 + d = 0
+        #   x (a + (bn + cp) / m) + b y0 + c z0 + d - ((bn + cp) / m) x0 = 0
+        #   q = (bn + cp) / m
+        #   x (a + q) + b y0 + c z0 + d - q x0 = 0
+        #   x = (q x0 - b y0 - c z0 - d) / (a + q)
+
+        if line.m != 0:
+            q = (b * n + c * p) / m
+            x = (q * x0 - b * y0 - c * z0 - d) / (a + q)
+            t = (x - x0) / m
+            y = y0 + t * n
+            z = z0 + t * p
+            return Point(x, y, z)
+        elif line.n != 0:
+            assert False
+        else:
+            assert line.p != 0
+            assert False
+
 #===================================================================================================
 
 class Triangle:
@@ -982,6 +1105,20 @@ class Triangle:
 
     #-----------------------------------------------------------------------------------------------
 
+    def __repr__(self):
+        """
+        String representation.
+
+        Returns
+        -------
+        str
+            String representation.
+        """
+
+        return f'Tri<{self.A}, {self.B}, {self.C}>'
+
+    #-----------------------------------------------------------------------------------------------
+
     def draw(self, plt, color='black', linewidth='2', size=20):
         """
         Draw on plot.
@@ -1013,22 +1150,21 @@ def test():
     Tests.
     """
 
-    assert True
+    # Base points.
+    O = Point(Fr(0), Fr(0), Fr(0))
+    X = Point(Fr(1), Fr(0), Fr(0))
+    Y = Point(Fr(0), Fr(1), Fr(0))
+    Z = Point(Fr(0), Fr(0), Fr(1))
+    print(O, X, Y, Z)
+
+    # Construct lines from points.
+    OX = Line.from_points(O, X)
+    OY = Line.from_points(O, Y)
+    OZ = Line.from_points(O, Z)
+    print(OX, OY, OZ)
 
 #---------------------------------------------------------------------------------------------------
 
 if __name__ == '__main__':
     test()
-
-    A = Point(Fr(1), Fr(0), Fr(0))
-    B = Point(Fr(0), Fr(1), Fr(0))
-    C = Point(Fr(0), Fr(0), Fr(1))
-    pl = Plane.from_points(A, B, C)
-    print(pl)
-    ln = Line.from_point_and_vector(A, B - A)
-    print(ln)
-    tr = Triangle(A, B, C)
-    tr.draw(plt)
-    plt.show()
-
 #===================================================================================================
