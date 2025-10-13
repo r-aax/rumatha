@@ -3,6 +3,7 @@
 """
 
 from fractions import Fraction as Fr
+import geom2d_rat
 import matplotlib.pyplot as plt
 
 #===================================================================================================
@@ -247,6 +248,48 @@ class Point:
 
         return ((A <= self) and (self <= B)) or ((B <= self) and (self <= A))
 
+    #-----------------------------------------------------------------------------------------------
+
+    def projection_OXY(self):
+        """
+        Projection on OXY (ignore Z coord).
+
+        Returns
+        -------
+        geom2d_rat.Point
+            Projection.
+        """
+
+        return geom2d_rat.Point(self.x, self.y)
+
+    #-----------------------------------------------------------------------------------------------
+
+    def projection_OXZ(self):
+        """
+        Projection on OXZ (ignore Y coord).
+
+        Returns
+        -------
+        geom2d_rat.Point
+            Projection.
+        """
+
+        return geom2d_rat.Point(self.x, self.z)
+
+    #-----------------------------------------------------------------------------------------------
+
+    def projection_OYZ(self):
+        """
+        Projection of OYZ (ignore X coord).
+
+        Returns
+        -------
+        geom2d_rat.Point
+            Projection.
+        """
+
+        return geom2d_rat.Point(self.y, self.z)
+
 #===================================================================================================
 
 class Vector(Point):
@@ -305,6 +348,28 @@ class Vector(Point):
         """
 
         return Vector(self.x - v.x, self.y - v.y, self.z - v.z)
+
+    #-----------------------------------------------------------------------------------------------
+
+    @staticmethod
+    def dot(v1, v2):
+        """
+        Dot product.
+
+        Parameters
+        ----------
+        v1 : Vector
+            First vector.
+        v2 : Vector
+            Second vector.
+
+        Returns
+        -------
+        Fraction
+            Result.
+        """
+
+        return v1.x * v2.x + v1.y * v2.y + v1.z * v2.z
 
 #===================================================================================================
 
@@ -1091,6 +1156,40 @@ class Plane:
 
     #-----------------------------------------------------------------------------------------------
 
+    def normal(self):
+        """
+        Get normal vector.
+
+        Returns
+        -------
+        Vector
+            Normal vector.
+        """
+
+        return Vector(self.a, self.b, self.c)
+
+    #-----------------------------------------------------------------------------------------------
+
+    def is_perpendicular_with_plane(self, pl):
+        """
+        Check if plane is perpendicular with plane.
+
+        Parameters
+        ----------
+        pl : Plane
+            Plane.
+
+        Returns
+        -------
+        bool
+            True - if perpendicular with plane,
+            False - otherwise.
+        """
+
+        return Vector.dot(self.normal(), pl.normal()) == 0
+
+    #-----------------------------------------------------------------------------------------------
+
     def is_intersects_with_segment(self, s):
         """
         Check if plane intersects with segment.
@@ -1311,6 +1410,9 @@ class Triangle:
         self.AC = Segment(self.A, self.C)
         self.sides = [self.AB, self.BC, self.AC]
 
+        # Plane.
+        self.plane = Plane.from_points(self.A, self.B, self.C)
+
     #-----------------------------------------------------------------------------------------------
 
     def __repr__(self):
@@ -1351,6 +1453,101 @@ class Triangle:
         for p in self.points:
             p.draw(plt, color=color, size=size)
 
+    #-----------------------------------------------------------------------------------------------
+
+    def is_perpendicular_with_plane(self, pl):
+        """
+        Check if perpendicular with plane.
+
+        Parameters
+        ----------
+        pl : Plane
+            Plane.
+
+        Returns
+        -------
+        bool
+            True - if perpendicular with plane,
+            False - otherwise.
+        """
+
+        return self.plane.is_perpendicular_with_plane(pl)
+
+    #-----------------------------------------------------------------------------------------------
+
+    def projection_OXY(self):
+        """
+        Projection on OXY (ignore Z coordinate).
+
+        Returns
+        -------
+        geom2d_rat.Triangle
+            Projection.
+        """
+
+        return geom2d_rat.Triangle(self.A.projection_OXY(),
+                                   self.B.projection_OXY(),
+                                   self.C.projection_OXY())
+
+    #-----------------------------------------------------------------------------------------------
+
+    def projection_OXZ(self):
+        """
+        Projection on OXZ (ignore Y coordinate).
+
+        Returns
+        -------
+        geom2d_rat.Triangle
+            Projection.
+        """
+
+        return geom2d_rat.Triangle(self.A.projection_OXZ(),
+                                   self.B.projection_OXZ(),
+                                   self.C.projection_OXZ())
+
+    #-----------------------------------------------------------------------------------------------
+
+    def projection_OYZ(self):
+        """
+        Projection on OYZ (ignore X coordinate).
+
+        Returns
+        -------
+        geom2d_rat.Triangle
+            Projection.
+        """
+
+        return geom2d_rat.Triangle(self.A.projection_OYZ(),
+                                   self.B.projection_OYZ(),
+                                   self.C.projection_OYZ())
+
+    #-----------------------------------------------------------------------------------------------
+
+    def is_have_point(self, p):
+        """
+        Check if triangle has point.
+
+        Parameters
+        ----------
+        p : Point
+            Point.
+
+        Returns
+        -------
+        bool
+            True - if triangle has point,
+            False - otherwise.
+        """
+
+        if not self.is_perpendicular_with_plane(OXY):
+            return self.projection_OXY().is_have_point(p.projection_OXY())
+        elif not self.is_perpendicular_with_plane(OXZ):
+            return self.projection_OXZ().is_have_point(p.projection_OXZ())
+        elif not self.is_perpendicular_with_plane(OYZ):
+            return self.projection_OYZ().is_have_point(p.projection_OYZ())
+        else:
+            assert False
+
 #===================================================================================================
 
 # Global objects.
@@ -1373,6 +1570,11 @@ def test():
     Tests.
     """
 
+    # Perpedicular planes.
+    assert OXY.is_perpendicular_with_plane(OYZ)
+    assert OXY.is_perpendicular_with_plane(OXZ)
+    assert OYZ.is_perpendicular_with_plane(OXZ)
+
     # Intersect plane with line.
     assert XYZ.intersection_with_line(OX) == X
     assert XYZ.intersection_with_line(OY) == Y
@@ -1387,6 +1589,13 @@ def test():
     assert SOX.is_have_point(Point(Fr(1, 2), Fr(0), Fr(0)))
     assert not SOX.is_have_point(Y)
     assert not SOX.is_have_point(Point(Fr(3, 2), Fr(0), Fr(0)))
+
+    # Check point on triangle.
+    TXYZ = Triangle(X, Y, Z)
+    assert TXYZ.is_have_point(Point(Fr(1, 3), Fr(1, 3), Fr(1, 3)))
+    assert TXYZ.is_have_point(Point(Fr(2, 5), Fr(2, 5), Fr(1, 5)))
+    assert not TXYZ.is_have_point(Point(Fr(2, 3), Fr(2, 3), Fr(-1, 3)))
+    assert not TXYZ.is_have_point(Point(Fr(-1), Fr(-1), Fr(-1)))
 
 #---------------------------------------------------------------------------------------------------
 
