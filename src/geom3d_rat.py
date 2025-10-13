@@ -50,7 +50,7 @@ class Point:
             False - otherwise.
         """
 
-        return (self.x == p.x) and (self.y == p.y) and (self.z == z)
+        return (self.x == p.x) and (self.y == p.y) and (self.z == p.z)
 
     #-----------------------------------------------------------------------------------------------
 
@@ -1070,28 +1070,62 @@ class Plane:
         #   z = z0 + tp
 
         # One of m, n, p is not zero.
-        # case 1. m != 0
-        #   t = (x - x0) / m, y = y0 + (n / m)(x - x0), z = z0 + (p / m)(x - x0)
-        #   ax + b (y0 + (n / m)(x - x0)) + c(z0 + (p / m)(x - x0)) + d = 0
-        #   ax + b y0 + (bn / m)(x - x0) + c z0 + (cp / m)(x - x0) + d = 0
-        #   ax + b y0 + (bn / m)x - (bn / m)x0 + c z0 + (cp / m)x - (cp / m)x0 + d = 0
-        #   x (a + (bn + cp) / m) + b y0 + c z0 + d - ((bn + cp) / m) x0 = 0
-        #   q = (bn + cp) / m
-        #   x (a + q) + b y0 + c z0 + d - q x0 = 0
-        #   x = (q x0 - b y0 - c z0 - d) / (a + q)
 
         if line.m != 0:
+
+            # case 1. m != 0
+            #   t = (x - x0) / m, y = y0 + (n / m)(x - x0), z = z0 + (p / m)(x - x0)
+            #   ax + b (y0 + (n / m)(x - x0)) + c(z0 + (p / m)(x - x0)) + d = 0
+            #   ax + b y0 + (bn / m)(x - x0) + c z0 + (cp / m)(x - x0) + d = 0
+            #   ax + b y0 + (bn / m)x - (bn / m)x0 + c z0 + (cp / m)x - (cp / m)x0 + d = 0
+            #   x (a + (bn + cp) / m) + b y0 + c z0 + d - ((bn + cp) / m) x0 = 0
+            #   q = (bn + cp) / m
+            #   x (a + q) + b y0 + c z0 + d - q x0 = 0
+            #   x = (q x0 - b y0 - c z0 - d) / (a + q)
             q = (b * n + c * p) / m
             x = (q * x0 - b * y0 - c * z0 - d) / (a + q)
             t = (x - x0) / m
             y = y0 + t * n
             z = z0 + t * p
             return Point(x, y, z)
+
         elif line.n != 0:
-            assert False
+
+            # case 2. n != 0
+            #   t = (y - y0) / n, x = x0 + (m / n)(y - y0), z = z0 + (p / n)(y - y0)
+            #   a (x0 + (m / n)(y - y0)) + by + c (z0 + (p / n)(y - y0)) + d = 0
+            #   a x0 + (am / n)(y - y0) + by + c z0 + (cp / n)(y - y0) + d = 0
+            #   a x0 + (am / n)y - (am / n)y0 + by + c z0 + (cp / n)y - (cp / n)y0 + d = 0
+            #   y ( b + (am + cp) / n) + a x0 + c z0 + d - ((am + cp) / n) y0 = 0
+            #   q = (am + cp) / n
+            #   y (b + q) + a x0 + c z0 + d - q y0 = 0
+            #   y = (q y0 - a x0 - c z0 - d) / (b + q)
+            q = (a * m + c * p) / n
+            y = (q * y0 - a * x0 - c * z0 - d) / (b + q)
+            t = (y - y0) / n
+            x = x0 + t * m
+            z = z0 + t * p
+            return Point(x, y, z)
+
         else:
+
             assert line.p != 0
-            assert False
+
+            # case 3. p != 0
+            #   t = (z - z0) / p, x = x0 + (m / p)(z - z0), y = y0 + (n / p)(z - z0)
+            #   a (x0 + (m / p)(z - z0)) + b (y0 + (n / p)(z - z0)) + cz + d = 0
+            #   a x0 + (am / p)(z - z0) + b y0 + (bn / p)(z - z0) + cz + d = 0
+            #   a x0 + (am / p)z + (am / p)z0 + b y0 + (bn / p)z + (bn / p)z0 + cz + d = 0
+            #   z (c + (am + bn) / p) + a x0 + b y 0 + d - ((am + bn) / p) z0 = 0
+            #   q = (am + bn) / p
+            #   z (c + q) + a x0 + b y0 + d - q z0 = 0
+            #   z = (q z0 - a x0 - b y0 - d) / (c + q)
+            q = (a * m + b * n) / p
+            z = (q * z0 - a * x0 - b * y0 - d) / (c + q)
+            t = (z - z0) / p
+            x = x0 + t * m
+            y = y0 + t * n
+            return Point(x, y, z)
 
 #===================================================================================================
 
@@ -1193,6 +1227,11 @@ def test():
     OXZ = Plane.from_points(O, X, Z)
     XYZ = Plane.from_points(X, Y, Z)
     print(OXY, OYZ, OXZ, XYZ)
+
+    # Intersect plane with line.
+    assert XYZ.intersection_with_line(OX) == X
+    assert XYZ.intersection_with_line(OY) == Y
+    assert XYZ.intersection_with_line(OZ) == Z
 
 #---------------------------------------------------------------------------------------------------
 
