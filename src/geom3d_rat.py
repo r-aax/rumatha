@@ -699,6 +699,8 @@ class Line:
             Parameter for Z direction.
         """
 
+        assert (m != 0) or (n != 0) or (p != 0)
+
         self.x0 = x0
         self.y0 = y0
         self.z0 = z0
@@ -803,8 +805,14 @@ class Plane:
         """
         Create plane from three points.
 
-        Types of plane:
-        1) General type plane: a = 1, b, c, d.
+        Plane types.
+        1) if a != 0 then a = 1
+           x + by + cz + d = 0
+        2) if a = 0 and b != 0 then b = 1
+           b + cz + d = 0
+        3) if a = 0 and b = 0 and c != 0 then c = 1
+           z + d = 0
+        4) if a = 0 and b = 0 and c = 0 then there is no plane.
 
         Parameters
         ----------
@@ -821,35 +829,51 @@ class Plane:
             Result plane.
         """
 
-        # General case
-        # Ax + b Ay + c Az + d = 0 // (1)
-        # Bx + b By + c Bz + d = 0 // (2)
-        # Cx + b Cy + c Cz + d = 0 // (3)
-        # we take a = 1
-        a = Fr(1)
+        x1, y1, z1, x2, y2, z2, x3, y3, z3 = A.x, A.y, A.z, B.x, B.y, B.z, C.x, C.y, C.z
 
-        # Subtract (1) - (2)
-        # (Ax - Bx) + b (Ay - By) + c (Az - Bz) = 0           // (4)
-        # b = (Bz - Az) / (Ay - By) c + (Bx - Ax) / (Ay - By)
-        # b = kbc c + kb                                      // (5)
-        kbc = (B.z - A.z) / (A.y - B.y)
-        kb = (B.x - A.x) / (A.y - B.y)
+        # src: https://guimc.bmstu.ru/wp-content/uploads/2018/11/lecture_2.1.pdf
+        # vectors M1M  = (x - x1, y - y1, z - z1)
+        #         M1M2 = (x2 - x1, y2 - y1, z2 - z1)
+        #         M1M3 = (x3 - x1, y3 - y1, z3 - z1)
+        # These vectors lie in one plane when they are complanar:
+        #   | x - x1    y - y1    z - z1  |
+        #   | x2 - x1   y2 - y1   z2 - z1 | = 0
+        #   | x3 - x1   y3 - y1   z3 - z1 |
+        x21, y21, z21 = x2 - x1, y2 - y1, z2 - z1
+        x31, y31, z31 = x3 - x1, y3 - y1, z3 - z1
 
-        # Place (5) into (2)
-        # Bx + (kbc c + kb) By + c Bz + d = 0 // (6)
-        # -d = (kbc By + Bz) c + (kb By + Bx)
-        # d = -(kbc By + Bz) c - (kb By + Bx)
-        # d = kdc c + kd                      // (7)
-        kdc = -(kbc * B.y + B.z)
-        kd = -(kb * B.y + B.x)
+        #   | x - x1    y - y1    z - z1 |
+        #   |  x21       y21       z21   | = 0
+        #   |  x31       y31       z31   |
+        # Calculate determinant:
+        # (x - x1) * |y21 z21| - (y - y1) * |x21 z21| + (z - z1) * |x21 y21| = 0
+        #            |y31 z31|              |x31 z31|              |x31 y31|
+        dx = y21 * z31 - y31 * z21
+        dy = -(x21 * z31 - x31 * z21)
+        dz = (x21 * y31 - x31 * y21)
 
-        # Place (5), (7) into (3)
-        # Cx + (kbc c + kb) Cy + c Cz + (kdc c + kd) = 0
-        # (kbc Cy + kdc + Cz) c + (kb Cy + kd + Cx) = 0
-        # c = -(kb Cy + kd + Cx) / (kbc Cy + kdc + Cz)
-        c = -(kb * C.y + kd + C.x) / (kbc * C.y + kdc + C.z)
-        d = kdc * c + kd
-        b = kbc * c + kb
+        # (x - x1) * dx + (y - y1) * dy + (z - z1) * dz = 0
+        # x dx - x1 dx + y dy - y1 dy + z dz - z1 dz = 0
+        # x dx + y dy + z dz + (-(x1 dx + y1 dy + z1 dz)) = 0
+        a = dx
+        b = dy
+        c = dz
+        d = -(x1 * dx + y1 * dy + z1 * dz)
+
+        if a != 0:
+            b = b / a
+            c = c / a
+            d = d / a
+            a = Fr(1)
+        elif b != 0:
+            c = c / b
+            d = d / b
+            b = Fr(1)
+        elif c != 0:
+            d = d / c
+            c = Fr(1)
+        else:
+            raise Exception(f'Plane can not be constructed from points {A}, {B}, {C}.')
 
         return Plane(a, b, c, d)
 
@@ -1162,6 +1186,13 @@ def test():
     OY = Line.from_points(O, Y)
     OZ = Line.from_points(O, Z)
     print(OX, OY, OZ)
+
+    # Construct planes.
+    OXY = Plane.from_points(O, X, Y)
+    OYZ = Plane.from_points(O, Y, Z)
+    OXZ = Plane.from_points(O, X, Z)
+    XYZ = Plane.from_points(X, Y, Z)
+    print(OXY, OYZ, OXZ, XYZ)
 
 #---------------------------------------------------------------------------------------------------
 
