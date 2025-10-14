@@ -671,12 +671,8 @@ class Line:
             y0 = y0 + t * n
             z0 = Fr(0)
 
-        self.x0 = x0
-        self.y0 = y0
-        self.z0 = z0
-        self.m = m
-        self.n = n
-        self.p = p
+        self.P0 = Point(x0, y0, z0)
+        self.v = Vector(m, n, p)
 
     #-----------------------------------------------------------------------------------------------
 
@@ -740,8 +736,7 @@ class Line:
             False - otherwise.
         """
 
-        return (self.x0 == line.x0) and (self.y0 == line.y0) and (self.z0 == line.z0) \
-               and (self.m == line.m) and (self.n == line.n) and (self.p == line.p)
+        return (self.P0 == line.P0) and (self.v == line.v)
 
     #-----------------------------------------------------------------------------------------------
 
@@ -798,7 +793,7 @@ class Line:
         """
 
         x, y, z = p.x, p.y, p.z
-        x0, y0, z0, m, n, p = self.x0, self.y0, self.z0, self.m, self.n, self.p
+        x0, y0, z0, m, n, p = self.P0.x, self.P0.y, self.P0.z, self.v.x, self.v.y, self.v.z
 
         if m != 0:
             t = (x - x0) / m
@@ -838,15 +833,14 @@ class Line:
             return line
 
         # Check for parallel lines.
-        if Vector.vector_product(Vector(self.m, self.n, self.p),
-                                 Vector(line.m, line.n, line.p)).is_null():
+        if Vector.vector_product(self.v, line.v).is_null():
             return None
 
         # Extract coefficients.
-        x1, y1, z1 = self.x0, self.y0, self.z0
-        m1, n1, p1 = self.m, self.n, self.p
-        x2, y2, z2 = line.x0, line.y0, line.z0
-        m2, n2, p2 = line.m, line.n, line.p
+        x1, y1, z1 = self.P0.x, self.P0.y, self.P0.z
+        m1, n1, p1 = self.v.x, self.v.y, self.v.z
+        x2, y2, z2 = line.P0.x, line.P0.y, line.P0.z
+        m2, n2, p2 = line.v.x, line.v.y, line.v.z
 
         # Linear equations system.
         # x1 + t1 * m1 = x2 + t2 * m2
@@ -1146,8 +1140,8 @@ class Segment:
         """
 
         # Find intersection of two containing lines.
-        self_line = Line.from_segment(self)
-        line = Line.from_segment(s)
+        self_line = self.line
+        line = s.line
         r = self_line.intersection_with_line(line)
 
         # No intersection.
@@ -1665,7 +1659,7 @@ class Plane:
         """
 
         a, b, c, d = self.a, self.b, self.c, self.d
-        x0, y0, z0, m, n, p = line.x0, line.y0, line.z0, line.m, line.n, line.p
+        x0, y0, z0, m, n, p = line.P0.x, line.P0.y, line.P0.z, line.v.x, line.v.y, line.v.z
 
         # ax + by + cz + d = 0
         #   x = x0 + tm
@@ -1674,7 +1668,7 @@ class Plane:
 
         # One of m, n, p is not zero.
 
-        if line.m != 0:
+        if m != 0:
 
             # case 1. m != 0
             #   t = (x - x0) / m, y = y0 + (n / m)(x - x0), z = z0 + (p / m)(x - x0)
@@ -1701,7 +1695,7 @@ class Plane:
 
             return Point(x, y, z)
 
-        elif line.n != 0:
+        elif n != 0:
 
             # case 2. n != 0
             #   t = (y - y0) / n, x = x0 + (m / n)(y - y0), z = z0 + (p / n)(y - y0)
@@ -1730,7 +1724,7 @@ class Plane:
 
         else:
 
-            assert line.p != 0
+            assert p != 0
 
             # case 3. p != 0
             #   t = (z - z0) / p, x = x0 + (m / p)(z - z0), y = y0 + (n / p)(z - z0)
