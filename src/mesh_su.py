@@ -721,6 +721,28 @@ class Mesh:
 
     #-----------------------------------------------------------------------------------------------
 
+    def add_zone(self, name):
+        """
+        Add zone.
+
+        Parameters
+        ----------
+        name : str
+            Name of zone.
+
+        Returns
+        -------
+        Zone
+            Added zone.
+        """
+
+        z = Zone(name)
+        self.zones.append(z)
+
+        return z
+
+    #-----------------------------------------------------------------------------------------------
+
     def add_node(self, p, zone, is_merge_nodes=True):
         """
         Add node to mesh.
@@ -994,8 +1016,7 @@ class Mesh:
 
                     # New zone.
                     zone_name = line.split('=')[1][1:-2]
-                    zone = Zone(zone_name)
-                    self.zones.append(zone)
+                    zone = self.add_zone(zone_name)
 
                     # Read count of nodes and faces to read.
                     nodes_line = f.readline()
@@ -1090,7 +1111,7 @@ class Mesh:
         """
 
         if not self.faces:
-            print('store : empty mesh')
+            print('Mesh.store: empty mesh, nothing to store.')
             return
 
         # Save faces glo_id.
@@ -1383,23 +1404,21 @@ class Mesh:
 if __name__ == '__main__':
 
     # Load mesh.
-    m = Mesh('../data/meshes/tetrahedron_2.dat')
+    in_mesh = Mesh('../data/meshes/tetrahedron_2.dat')
 
-    # Get triangles.
-    DENOM = 1
-    ts = []
-    for f in m.faces:
-        ts.append(geom3d_rat.Triangle(geom3d_rat.Point.from_real_array(f.nodes[0].p, DENOM),
-                                      geom3d_rat.Point.from_real_array(f.nodes[1].p, DENOM),
-                                      geom3d_rat.Point.from_real_array(f.nodes[2].p, DENOM)))
+    # Create result mesh.
+    out_mesh = Mesh()
+    zone = out_mesh.add_zone('SINGLE ZONE')
 
-    # Calculate triangles intersections.
-    n = len(ts)
-    for i in range(n):
-        for j in range(i + 1, n):
-            print(f'i = {i}, j = {j}')
-            print(f'    {ts[i]} - {ts[j]}')
-            r = ts[i].intersection_with_triangle(ts[j])
-            print(f'    {r}')
+    # Process every target cell.
+    for face in in_mesh.faces:
+        a, b, c = face.nodes[0], face.nodes[1], face.nodes[2]
+        a = out_mesh.add_node(a.p, zone, True)
+        b = out_mesh.add_node(b.p, zone, True)
+        c = out_mesh.add_node(c.p, zone, True)
+        out_mesh.add_face(a, b, c, zone)
+
+    # Save result mesh.
+    out_mesh.store('../data/meshes/tetrahedron_2_out.dat')
 
 # ==================================================================================================
