@@ -1403,143 +1403,7 @@ class Plane:
             return s
 
         # Intersection point is inside of segment.
-        return self.intersection_with_line(Line.from_points(s.A, s.B))
-
-    #-----------------------------------------------------------------------------------------------
-
-    def is_intersects_with_line(self, line):
-        """
-        Check if plane intersects with line.
-
-        Parameters
-        ----------
-        line : Line
-            Line.
-
-        Returns
-        -------
-        bool
-            True - if plane intersects with line,
-            False - otherwise.
-        """
-
-        # see intersection_with_line
-
-        return not (self.intersection_with_line(line) is None)
-
-    #-----------------------------------------------------------------------------------------------
-
-    def intersection_with_line(self, line):
-        """
-        Find intersection with line.
-
-        Parameters
-        ----------
-        line : Line
-            Line.
-
-        Returns
-        -------
-        None
-            If there is no intersection.
-        Point
-            If plane and line intersects by point.
-        Line
-            If line lays in plane.
-        """
-
-        a, b, c, d = self.a, self.b, self.c, self.d
-        x0, y0, z0, m, n, p = line.P0.x, line.P0.y, line.P0.z, line.v.x, line.v.y, line.v.z
-
-        # ax + by + cz + d = 0
-        #   x = x0 + tm
-        #   y = y0 + tn
-        #   z = z0 + tp
-
-        # One of m, n, p is not zero.
-
-        if m != 0:
-
-            # case 1. m != 0
-            #   t = (x - x0) / m, y = y0 + (n / m)(x - x0), z = z0 + (p / m)(x - x0)
-            #   ax + b (y0 + (n / m)(x - x0)) + c(z0 + (p / m)(x - x0)) + d = 0
-            #   ax + b y0 + (bn / m)(x - x0) + c z0 + (cp / m)(x - x0) + d = 0
-            #   ax + b y0 + (bn / m)x - (bn / m)x0 + c z0 + (cp / m)x - (cp / m)x0 + d = 0
-            #   x (a + (bn + cp) / m) + b y0 + c z0 + d - ((bn + cp) / m) x0 = 0
-            #   q = (bn + cp) / m
-            #   x (a + q) + b y0 + c z0 + d - q x0 = 0
-            #   x = (q x0 - b y0 - c z0 - d) / (a + q)
-            q = (b * n + c * p) / m
-            up, dn = q * x0 - b * y0 - c * z0 - d, a + q
-
-            if dn == 0:
-                if up == 0:
-                    return line
-                else:
-                    return None
-
-            x = up / dn
-            t = (x - x0) / m
-            y = y0 + t * n
-            z = z0 + t * p
-
-            return Point(x, y, z)
-
-        elif n != 0:
-
-            # case 2. n != 0
-            #   t = (y - y0) / n, x = x0 + (m / n)(y - y0), z = z0 + (p / n)(y - y0)
-            #   a (x0 + (m / n)(y - y0)) + by + c (z0 + (p / n)(y - y0)) + d = 0
-            #   a x0 + (am / n)(y - y0) + by + c z0 + (cp / n)(y - y0) + d = 0
-            #   a x0 + (am / n)y - (am / n)y0 + by + c z0 + (cp / n)y - (cp / n)y0 + d = 0
-            #   y ( b + (am + cp) / n) + a x0 + c z0 + d - ((am + cp) / n) y0 = 0
-            #   q = (am + cp) / n
-            #   y (b + q) + a x0 + c z0 + d - q y0 = 0
-            #   y = (q y0 - a x0 - c z0 - d) / (b + q)
-            q = (a * m + c * p) / n
-            up, dn = q * y0 - a * x0 - c * z0 - d, b + q
-
-            if dn == 0:
-                if up == 0:
-                    return line
-                else:
-                    return None
-
-            y = up / dn
-            t = (y - y0) / n
-            x = x0 + t * m
-            z = z0 + t * p
-
-            return Point(x, y, z)
-
-        else:
-
-            assert p != 0
-
-            # case 3. p != 0
-            #   t = (z - z0) / p, x = x0 + (m / p)(z - z0), y = y0 + (n / p)(z - z0)
-            #   a (x0 + (m / p)(z - z0)) + b (y0 + (n / p)(z - z0)) + cz + d = 0
-            #   a x0 + (am / p)(z - z0) + b y0 + (bn / p)(z - z0) + cz + d = 0
-            #   a x0 + (am / p)z + (am / p)z0 + b y0 + (bn / p)z + (bn / p)z0 + cz + d = 0
-            #   z (c + (am + bn) / p) + a x0 + b y 0 + d - ((am + bn) / p) z0 = 0
-            #   q = (am + bn) / p
-            #   z (c + q) + a x0 + b y0 + d - q z0 = 0
-            #   z = (q z0 - a x0 - b y0 - d) / (c + q)
-            q = (a * m + b * n) / p
-            up, dn = q * z0 - a * x0 - b * y0 - d, c + q
-
-            if dn == 0:
-                if up == 0:
-                    return line
-                else:
-                    return None
-
-            z = up / dn
-            t = (z - z0) / p
-            x = x0 + t * m
-            y = y0 + t * n
-
-            return Point(x, y, z)
+        return Intersection.line_plane(s.line, self)
 
 #===================================================================================================
 
@@ -2166,7 +2030,98 @@ class Intersection:
             Line is in plane.
         """
 
-        raise Exception('not implemented')
+        x0, y0, z0, m, n, p = ln.P0.x, ln.P0.y, ln.P0.z, ln.v.x, ln.v.y, ln.v.z
+        a, b, c, d = pl.a, pl.b, pl.c, pl.d
+
+        # ax + by + cz + d = 0
+        #   x = x0 + tm
+        #   y = y0 + tn
+        #   z = z0 + tp
+
+        # One of m, n, p is not zero.
+
+        if m != 0:
+
+            # case 1. m != 0
+            #   t = (x - x0) / m, y = y0 + (n / m)(x - x0), z = z0 + (p / m)(x - x0)
+            #   ax + b (y0 + (n / m)(x - x0)) + c(z0 + (p / m)(x - x0)) + d = 0
+            #   ax + b y0 + (bn / m)(x - x0) + c z0 + (cp / m)(x - x0) + d = 0
+            #   ax + b y0 + (bn / m)x - (bn / m)x0 + c z0 + (cp / m)x - (cp / m)x0 + d = 0
+            #   x (a + (bn + cp) / m) + b y0 + c z0 + d - ((bn + cp) / m) x0 = 0
+            #   q = (bn + cp) / m
+            #   x (a + q) + b y0 + c z0 + d - q x0 = 0
+            #   x = (q x0 - b y0 - c z0 - d) / (a + q)
+            q = (b * n + c * p) / m
+            up, dn = q * x0 - b * y0 - c * z0 - d, a + q
+
+            if dn == 0:
+                if up == 0:
+                    return ln
+                else:
+                    return None
+
+            x = up / dn
+            t = (x - x0) / m
+            y = y0 + t * n
+            z = z0 + t * p
+
+            return Point(x, y, z)
+
+        elif n != 0:
+
+            # case 2. n != 0
+            #   t = (y - y0) / n, x = x0 + (m / n)(y - y0), z = z0 + (p / n)(y - y0)
+            #   a (x0 + (m / n)(y - y0)) + by + c (z0 + (p / n)(y - y0)) + d = 0
+            #   a x0 + (am / n)(y - y0) + by + c z0 + (cp / n)(y - y0) + d = 0
+            #   a x0 + (am / n)y - (am / n)y0 + by + c z0 + (cp / n)y - (cp / n)y0 + d = 0
+            #   y ( b + (am + cp) / n) + a x0 + c z0 + d - ((am + cp) / n) y0 = 0
+            #   q = (am + cp) / n
+            #   y (b + q) + a x0 + c z0 + d - q y0 = 0
+            #   y = (q y0 - a x0 - c z0 - d) / (b + q)
+            q = (a * m + c * p) / n
+            up, dn = q * y0 - a * x0 - c * z0 - d, b + q
+
+            if dn == 0:
+                if up == 0:
+                    return ln
+                else:
+                    return None
+
+            y = up / dn
+            t = (y - y0) / n
+            x = x0 + t * m
+            z = z0 + t * p
+
+            return Point(x, y, z)
+
+        else:
+
+            assert p != 0
+
+            # case 3. p != 0
+            #   t = (z - z0) / p, x = x0 + (m / p)(z - z0), y = y0 + (n / p)(z - z0)
+            #   a (x0 + (m / p)(z - z0)) + b (y0 + (n / p)(z - z0)) + cz + d = 0
+            #   a x0 + (am / p)(z - z0) + b y0 + (bn / p)(z - z0) + cz + d = 0
+            #   a x0 + (am / p)z + (am / p)z0 + b y0 + (bn / p)z + (bn / p)z0 + cz + d = 0
+            #   z (c + (am + bn) / p) + a x0 + b y 0 + d - ((am + bn) / p) z0 = 0
+            #   q = (am + bn) / p
+            #   z (c + q) + a x0 + b y0 + d - q z0 = 0
+            #   z = (q z0 - a x0 - b y0 - d) / (c + q)
+            q = (a * m + b * n) / p
+            up, dn = q * z0 - a * x0 - b * y0 - d, c + q
+
+            if dn == 0:
+                if up == 0:
+                    return ln
+                else:
+                    return None
+
+            z = up / dn
+            t = (z - z0) / p
+            x = x0 + t * m
+            y = y0 + t * n
+
+            return Point(x, y, z)
 
     #-----------------------------------------------------------------------------------------------
 
