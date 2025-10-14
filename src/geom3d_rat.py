@@ -2105,7 +2105,11 @@ class Intersection:
             Equal points.
         """
 
-        raise Exception('not implemented')
+        # Points may ne equal or not.
+        if p1 == p2:
+            return p1
+        else:
+            return None
 
     #-----------------------------------------------------------------------------------------------
 
