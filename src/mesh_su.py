@@ -1431,13 +1431,13 @@ class Mesh:
 
 #===================================================================================================
 
-def mesh_triangles_list(mesh):
+def mesh_triangles_list(m):
     """
     Get list of triangles.
 
     Parameters
     ----------
-    mesh : Mesh
+    m : Mesh
         Mesh.
 
     Returns
@@ -1446,7 +1446,48 @@ def mesh_triangles_list(mesh):
         List of triangles.
     """
 
-    return [geom3d_rat.Triangle(f.nodes[0].p, f.nodes[1].p, f.nodes[2].p) for f in mesh.faces]
+    return [(geom3d_rat.Triangle(f.nodes[0].p, f.nodes[1].p, f.nodes[2].p),
+             geom3d_rat.PointsAndSegments()) for f in m.faces]
+
+#---------------------------------------------------------------------------------------------------
+
+def mesh_add_triangle(m, z, t):
+    """
+    Add triangle to mesh.
+
+    Parameters
+    ----------
+    m : Mesh
+        Mesh.
+    z : Zone
+        Zone.
+    t : geom3d_rat.Triangle
+        Triangle to add.
+    """
+
+    a = m.add_node(t.A, z, True)
+    b = m.add_node(t.B, z, True)
+    c = m.add_node(t.C, z, True)
+    m.add_face(a, b, c, z)
+
+#---------------------------------------------------------------------------------------------------
+
+def mesh_add_triangles(m, z, ts):
+    """
+    Add triangle to mesh.
+
+    Parameters
+    ----------
+    m : Mesh
+        Mesh.
+    z : Zone
+        Zone.
+    ts : [geom3d_rat.Triangle]
+        Triangles list.
+    """
+
+    for t in ts:
+        mesh_add_triangle(m, z, t)
 
 #---------------------------------------------------------------------------------------------------
 
@@ -1463,11 +1504,11 @@ if __name__ == '__main__':
     zone = out_mesh.add_zone('SINGLE ZONE')
 
     # Process every triangle.
-    for tri in ts:
+    for (tri, _) in ts:
 
         # Check if triangle t is intersection triangle.
         is_tri_intersection = False
-        for t in ts:
+        for (t, _) in ts:
             if t != tri:
                 r = geom3d_rat.Intersection.triangle_triangle(tri, t)
                 if r is None:
@@ -1481,10 +1522,7 @@ if __name__ == '__main__':
 
         # Transfer triangle to mesh without any changes.
         if not is_tri_intersection:
-            a = out_mesh.add_node(tri.A, zone, True)
-            b = out_mesh.add_node(tri.B, zone, True)
-            c = out_mesh.add_node(tri.C, zone, True)
-            out_mesh.add_face(a, b, c, zone)
+            mesh_add_triangle(out_mesh, zone, tri)
 
     # Save result mesh.
     out_mesh.convert_coordinates_rat_to_real()

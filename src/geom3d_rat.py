@@ -317,6 +317,26 @@ class Point:
 
     #-----------------------------------------------------------------------------------------------
 
+    def is_segment_end(self, s):
+        """
+        Check if point is end of segment.
+
+        Parameters
+        ----------
+        s : Segment
+            Segment.
+
+        Returns
+        -------
+        bool
+            True - if point is segment end,
+            False - otherwise.
+        """
+
+        return (self == s.A) or (self == s.B)
+
+    #-----------------------------------------------------------------------------------------------
+
     def is_incident(self, obj):
         """
         Check if point is incident to obj (segment or triangle).
@@ -334,7 +354,7 @@ class Point:
         """
 
         if isinstance(obj, Segment):
-            return (self == obj.A) or (self == obj.B)
+            return self.is_segment_end(obj)
         else:
             assert isinstance(obj, Triangle)
             return (self == obj.A) or (self == obj.B) or (self == obj.C)
@@ -599,6 +619,30 @@ class Points:
 
     #-----------------------------------------------------------------------------------------------
 
+    def is_contain_point(self, p):
+        """
+        Check if points set contains point.
+
+        Parameters
+        ----------
+        p : Point
+            Point.
+
+        Returns
+        -------
+        bool
+            True - if point in points set,
+            False - otherwise.
+        """
+
+        for pi in self.items:
+            if pi == p:
+                return True
+
+        return False
+
+    #-----------------------------------------------------------------------------------------------
+
     def add_unique(self, p):
         """
         Add new unique point.
@@ -615,9 +659,8 @@ class Points:
             False - if point was not added.
         """
 
-        for pi in self.items:
-            if p == pi:
-                return False
+        if self.is_contain_point(p):
+            return False
 
         self.add(p)
 
@@ -1085,6 +1128,54 @@ class Segments:
 
     #-----------------------------------------------------------------------------------------------
 
+    def is_contain_segment(self, s):
+        """
+        Check if segments set contains segment.
+
+        Parameters
+        ----------
+        s : Segment
+            Segment.
+
+        Returns
+        -------
+        bool
+            True - if segment is in segments set,
+            False - otherwise.
+        """
+
+        for si in self.items:
+            if si == s:
+                return True
+
+        return False
+
+    #-----------------------------------------------------------------------------------------------
+
+    def is_contain_point_as_segment_end(self, p):
+        """
+        Check if point is some segment end.
+
+        Parameters
+        ----------
+        p : Point
+            Point.
+
+        Returns
+        -------
+        bool
+            True - if point is end of some segment,
+            False - otherwise.
+        """
+
+        for si in self.items:
+            if p.is_segment_end(si):
+                return True
+
+        return False
+
+    #-----------------------------------------------------------------------------------------------
+
     def add_unique(self, s):
         """
         Add unique segment.
@@ -1101,9 +1192,8 @@ class Segments:
             False - if segment was not added.
         """
 
-        for si in self.items:
-            if si == s:
-                return False
+        if self.is_contain_segment(s):
+            return False
 
         self.add(s)
 
@@ -1142,6 +1232,179 @@ class Segments:
         """
 
         self.items.sort(key=fun)
+
+#===================================================================================================
+
+class PointsAndSegments:
+    """
+    Class that holds points and segments.
+    """
+
+    #-----------------------------------------------------------------------------------------------
+
+    def __init__(self):
+        """
+        Constructor.
+        """
+
+        self.points = Points()
+        self.segments = Segments()
+
+    #-----------------------------------------------------------------------------------------------
+
+    def __repr__(self):
+        """
+        String representation.
+
+        Returns
+        -------
+        str
+            String representation.
+        """
+
+        return f'P&S: {self.points} + {self.segments}'
+
+    #-----------------------------------------------------------------------------------------------
+
+    def draw(self, plt, color='black', linewidth='2', size=20):
+        """
+        Draw on plot.
+
+        Parameters
+        ----------
+        plt : Plot
+            Plot.
+        color : str
+            Color.
+        linewidth : str
+            Line width.
+        size : int
+            Size.
+        """
+
+        self.segments.draw(plt, color, linewidth, size)
+        self.points.draw(plt, color, size)
+
+    #-----------------------------------------------------------------------------------------------
+
+    def points_count(self):
+        """
+        Points count.
+
+        Returns
+        -------
+        int
+            Points count.
+        """
+
+        return self.points.count()
+
+    #-----------------------------------------------------------------------------------------------
+
+    def segments_count(self):
+        """
+        Segments count.
+
+        Returns
+        -------
+        int
+            Segments count.
+        """
+
+        return self.segments.count()
+
+    #-----------------------------------------------------------------------------------------------
+
+    def add_point(self, p):
+        """
+        Add point.
+
+        Parameters
+        ----------
+        p : Point
+            Point.
+        """
+
+        self.points.add(p)
+
+    #-----------------------------------------------------------------------------------------------
+
+    def add_segment(self, s):
+        """
+        Add segment.
+
+        Parameters
+        ----------
+        s : Segment
+            Segment.
+        """
+
+        self.segments.add(s)
+
+    #-----------------------------------------------------------------------------------------------
+
+    def add_unique_point(self, p):
+        """
+        Add unique point.
+
+        We add point only if it is not in points set,
+        and if it is not end of some segment.
+
+        Parameters
+        ----------
+        p : Point
+            Point.
+
+        Returns
+        -------
+        bool
+            True - if point was added (because it was unique),
+            False - otherwise.
+        """
+
+        # Try to find point as object or segment end.
+        if self.points.is_contain_point(p) or self.segments.is_contain_point_as_segment_end(p):
+            return False
+
+        self.add_point(p)
+
+        return True
+
+    #-----------------------------------------------------------------------------------------------
+
+    def add_unique_segment(self, s):
+        """
+        Add new unique segment.
+
+        We can add segment only if there is no such segment.
+        If any point is end of new segment then delete this point.
+
+        Parameters
+        ----------
+        s : Segment
+            Segment.
+
+        Returns
+        -------
+        bool
+            True - if segment is added,
+            False - otherwise.
+        """
+
+        # If there is such segment then do not add.
+        if self.segments.is_contain_segment(s):
+            return False
+
+        # Check all points and write them into new set.
+        ps = Points()
+        for pi in self.points.items:
+            if not pi.is_segment_end(s):
+                ps.add(pi)
+        self.points = ps
+
+        self.segments.add(s)
+
+        return True
 
 #===================================================================================================
 
