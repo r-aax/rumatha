@@ -69,7 +69,11 @@ class Node:
             Rounded coordinates.
         """
 
-        return tuple(map(lambda x: round(x, NODE_COORDINATES_VALUABLE_DIGITS_COUNT), self.p))
+        p = self.p
+        if isinstance(p, geom3d_rat.Point):
+            p = p.get_real_array()
+
+        return tuple(map(lambda x: round(x, NODE_COORDINATES_VALUABLE_DIGITS_COUNT), p))
 
     #-----------------------------------------------------------------------------------------------
 
@@ -1081,6 +1085,32 @@ class Mesh:
 
     #-----------------------------------------------------------------------------------------------
 
+    def convert_coordinates_real_to_rat(self, denom):
+        """
+        Convert all nodes coordinates from real to rat.
+
+        Parameters
+        ----------
+        denom : int
+            Denominator.
+        """
+
+        for node in self.nodes:
+            node.p = geom3d_rat.Point.from_real_array(node.p, denom)
+
+    #-----------------------------------------------------------------------------------------------
+
+    def convert_coordinates_rat_to_real(self):
+        """
+        Convert all nodes coordinates from rat to real.
+        """
+
+        for node in self.nodes:
+            coords = [node.p.x, node.p.y, node.p.z]
+            node.p = np.array([f.numerator / f.denominator for f in coords])
+
+    #-----------------------------------------------------------------------------------------------
+
     def set_faces_variables(self, fv):
         """
         Delete all faces variables and set new (with values 0.0).
@@ -1403,8 +1433,9 @@ class Mesh:
 
 if __name__ == '__main__':
 
-    # Load mesh.
+    # Load mesh and convert coords to fractions.
     in_mesh = Mesh('../data/meshes/tetrahedron_2.dat')
+    in_mesh.convert_coordinates_real_to_rat(10)
 
     # Create result mesh.
     out_mesh = Mesh()
@@ -1419,6 +1450,7 @@ if __name__ == '__main__':
         out_mesh.add_face(a, b, c, zone)
 
     # Save result mesh.
+    out_mesh.convert_coordinates_rat_to_real()
     out_mesh.store('../data/meshes/tetrahedron_2_out.dat')
 
 # ==================================================================================================

@@ -86,6 +86,22 @@ class Point:
 
     #-----------------------------------------------------------------------------------------------
 
+    def get_real_array(self):
+        """
+        Get real array from rat coordinates.
+
+        Returns
+        -------
+        np.array
+            Array of coordinates.
+        """
+
+        coords = [self.x, self.y, self.z]
+
+        return [f.numerator / f.denominator for f in coords]
+
+    #-----------------------------------------------------------------------------------------------
+
     def __eq__(self, p):
         """
         Check equal with another point.
