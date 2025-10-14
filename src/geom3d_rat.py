@@ -807,50 +807,6 @@ class Line:
         else:
             assert False
 
-    #-----------------------------------------------------------------------------------------------
-
-    def intersection_with_segment(self, s):
-        """
-        Find intersection of line and segment.
-
-        Parameters
-        ----------
-        s : Segment
-            Segment.
-
-        Returns
-        -------
-        None
-            If there is no intersection.
-        Point
-            If there is single point.
-        Segment
-            If segment lies in the line.
-        """
-
-        # Construct line from segment.
-        line = Line.from_segment(s)
-
-        # Find intersection of two lines.
-        r = self.intersection_with_line(line)
-
-        if r is None:
-            # No intersection of two lines.
-            return None
-        elif isinstance(r, Point):
-            p = r
-            if s.is_have_point(p):
-                # Common point is in segment.
-                return p
-            else:
-                # Common point is outside segment.
-                return None
-        elif isinstance(r, Line):
-            # Segment lies in line.
-            return s
-        else:
-            assert False
-
 #===================================================================================================
 
 class Segment:
@@ -1013,91 +969,6 @@ class Segment:
 
         if self.A > self.B:
             self.A, self.B = self.B, self.A
-
-    #-----------------------------------------------------------------------------------------------
-
-    def intersection_with_line(self, line):
-        """
-        Find intersection with line.
-
-        Parameters
-        ----------
-        line : Line
-            Line.
-
-        Returns
-        -------
-        None
-            If there is no intersection.
-        Point
-            If there is only one common point.
-        Segment
-            If segment lie in line.
-        """
-
-        return line.intersection_with_segment(self)
-
-    #-----------------------------------------------------------------------------------------------
-
-    def intersection_with_segment(self, s):
-        """
-        Find intersection of two segments.
-
-        Parameters
-        ----------
-        s : Segment
-            Segment.
-
-        Returns
-        -------
-        None
-            If there is no intersection.
-        Point
-            If there is only one common point.
-        Segment
-            If both segments lie on one line.
-        """
-
-        # Find intersection of two containing lines.
-        self_line = self.line
-        line = s.line
-        r = Intersection.line_line(self_line, line)
-
-        # No intersection.
-        if r is None:
-            return None
-
-        # One point intersection.
-        # Both segments must have it.
-        if isinstance(r, Point):
-            p = r
-            if self.is_have_point(p) and s.is_have_point(p):
-                return p
-            else:
-                return None
-
-        # So both segments lie in one line.
-        assert isinstance(r, Line)
-
-        A1, B1 = self.A, self.B
-        A2, B2 = s.A, s.B
-        assert A1 <= B1
-        assert A2 <= B2
-
-        # A1       B1       A2       B2
-        # *--------*........*--------*
-        #
-        # A2       B2       A1       B1
-        #*---------*........*--------*
-        if (A2 > B1) or (A1 > B2):
-            return None
-
-        # A1       A2       B1       B2
-        # *--------*========*--------*
-        #
-        # A2       A1       B2       B1
-        # *--------*========*--------*
-        return Segment(max(A1, A2), min(B1, B2))
 
 #===================================================================================================
 
@@ -1881,9 +1752,9 @@ class Triangle:
         assert isinstance(r, Segment)
 
         # Find intersections of all triangle sides with segment.
-        r1 = self.AB.intersection_with_segment(s)
-        r2 = self.BC.intersection_with_segment(s)
-        r3 = self.AC.intersection_with_segment(s)
+        r1 = Intersection.segment_segment(self.AB, s)
+        r2 = Intersection.segment_segment(self.BC, s)
+        r3 = Intersection.segment_segment(self.AC, s)
 
         # If one of intersections r1, r2, r3 is segment,
         # then this segment is result of triangle and segment intersection.
@@ -2249,7 +2120,27 @@ class Intersection:
             Segment is on line.
         """
 
-        raise Exception('not implemented')
+        # Find intersection of two lines.
+        r = Intersection.line_line(ln, s.line)
+
+        # No intersection.
+        if r is None:
+            return None
+
+        # Whole segment.
+        if isinstance(r, Line):
+            return s
+
+        # Intersection of two lines is point.
+        assert isinstance(r, Point)
+
+        p = r
+
+        # If point on segment then this point is intersection.
+        if s.is_have_point(p):
+            return p
+        else:
+            return None
 
     #-----------------------------------------------------------------------------------------------
 
@@ -2377,7 +2268,53 @@ class Intersection:
             Intersection by segment.
         """
 
-        raise Exception('not implemented')
+        # Find intersection of two containing lines.
+        r = Intersection.line_line(s1.line, s2.line)
+
+        # No intersection.
+        if r is None:
+            return None
+
+        # One point intersection.
+        # Both segments must have it.
+        # We know that point is placed on both lines.
+        # So we have to check point for between ends check.
+        if isinstance(r, Point):
+            p = r
+            if p.is_between(s1.A, s1.B) and p.is_between(s2.A, s2.B):
+                return p
+            else:
+                return None
+
+        # So both segments lie in one line.
+        assert isinstance(r, Line)
+
+        # Get ends.
+        A1, B1 = s1.A, s1.B
+        A2, B2 = s2.A, s2.B
+        assert A1 <= B1
+        assert A2 <= B2
+
+        # No intersection check.
+        # A1       B1       A2       B2
+        # *--------*........*--------*
+        # A2       B2       A1       B1
+        #*---------*........*--------*
+        if (A2 > B1) or (A1 > B2):
+            return None
+
+        # Get intersection segment.
+        # A1       A2       B1       B2
+        # *--------*========*--------*
+        # A2       A1       B2       B1
+        # *--------*========*--------*
+        A, B = max(A1, A2), min(B1, B2)
+
+        # Intersection can be segment or single point.
+        if A == B:
+            return A
+        else:
+            Segment(A, B)
 
     #-----------------------------------------------------------------------------------------------
 
