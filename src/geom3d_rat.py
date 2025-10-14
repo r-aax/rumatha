@@ -1525,63 +1525,6 @@ class Triangle:
         else:
             assert False
 
-    #-----------------------------------------------------------------------------------------------
-
-    def intersection_with_triangle(self, t):
-        """
-        Find intersection with another triangle.
-
-        Parameters
-        ----------
-        t : Triangle
-            Triangle.
-
-        Returns
-        -------
-        None
-            There is no intersection.
-        Point
-            There is one point intersection.
-        Segment
-            There is two points intersection.
-        [Point]
-            Set of points, which form convex full.
-            May contain points from 0 to 6.
-            3 - triangle,
-            4 - convex quadrangle,
-            5 - convex pentagon,
-            6 - convex hexagon.
-        """
-
-        ps = Points()
-
-        for s in self.sides:
-            r = Intersection.segment_triangle(s, t)
-            if isinstance(r, Point):
-                ps.add_unique(r)
-            elif isinstance(r, Segment):
-                ps.add_unique(r.A)
-                ps.add_unique(r.B)
-
-        for s in t.sides:
-            r = Intersection.segment_triangle(s, self)
-            if isinstance(r, Point):
-                ps.add_unique(r)
-            elif isinstance(r, Segment):
-                ps.add_unique(r.A)
-                ps.add_unique(r.B)
-
-        cnt = ps.count()
-
-        if cnt == 0:
-            return None
-        elif cnt == 1:
-            return ps[0]
-        elif cnt == 2:
-            return Segment(ps[0], ps[1])
-        else:
-            return ps
-
 #===================================================================================================
 
 class Intersection:
@@ -2520,7 +2463,37 @@ class Intersection:
             6 - convex hexagon.
         """
 
-        raise Exception('not implemented')
+        ps = Points()
+
+        for s in t1.sides:
+            r = Intersection.segment_triangle(s, t2)
+            if isinstance(r, Point):
+                ps.add_unique(r)
+            elif isinstance(r, Segment):
+                ps.add_unique(r.A)
+                ps.add_unique(r.B)
+
+        for s in t2.sides:
+            r = Intersection.segment_triangle(s, t1)
+            if isinstance(r, Point):
+                ps.add_unique(r)
+            elif isinstance(r, Segment):
+                ps.add_unique(r.A)
+                ps.add_unique(r.B)
+
+        cnt = ps.count()
+
+        # Check all cases.
+        if cnt == 0:
+            return None
+        elif cnt == 1:
+            return ps[0]
+        elif cnt == 2:
+            return Segment(ps[0], ps[1])
+        elif cnt == 3:
+            return Triangle(ps[0], ps[1], ps[2])
+        else:
+            return ps
 
 #===================================================================================================
 
