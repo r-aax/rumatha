@@ -1321,6 +1321,33 @@ class Plane:
 
     #-----------------------------------------------------------------------------------------------
 
+    def is_three_points_strong_on_one_side(self, p1, p2, p3):
+        """
+        Check if three points strong on one side.
+
+        Parameters
+        ----------
+        p1 : Point
+            First point.
+        p2 : Point
+            Second point.
+        p3 : Point
+            Three point.
+
+        Returns
+        -------
+        bool
+            True - if three points on one side of plane,
+            False - otherwise.
+
+        """
+
+        v1, v2, v3 = self.val(p1), self.val(p2), self.val(p3)
+
+        return (v1 * v2 > 0) and (v1 * v3 > 0)
+
+    #-----------------------------------------------------------------------------------------------
+
     def normal(self):
         """
         Get normal vector.
@@ -2462,6 +2489,12 @@ class Intersection:
             5 - convex pentagon,
             6 - convex hexagon.
         """
+
+        # Fast check for None intersection.
+        if t1.plane.is_three_points_strong_on_one_side(t2.A, t2.B, t2.C):
+            return None
+        if t2.plane.is_three_points_strong_on_one_side(t1.A, t1.B, t1.C):
+            return None
 
         ps = Points()
 
