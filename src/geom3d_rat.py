@@ -1527,77 +1527,6 @@ class Triangle:
 
     #-----------------------------------------------------------------------------------------------
 
-    def intersection_with_segment(self, s):
-        """
-        Find intersection of triangle with segment.
-
-        Parameters
-        ----------
-        s : Segment
-            Segment.
-
-        Returns
-        -------
-        None
-            There is non intersection.
-        Point
-            If there is only one point intersection.
-        Segment
-            If intersection is performed by segment.
-        """
-
-        # Find intersection of plane and segment.
-        r = Intersection.segment_plane(s, self.plane)
-
-        # No intersection segment with plane.
-        if r is None:
-            return None
-
-        # There is intersection of plane and segment.
-        if isinstance(r, Point):
-            p = r
-            if self.is_have_point(p):
-                return p
-            else:
-                return None
-
-        assert isinstance(r, Segment)
-
-        # Find intersections of all triangle sides with segment.
-        r1 = Intersection.segment_segment(self.AB, s)
-        r2 = Intersection.segment_segment(self.BC, s)
-        r3 = Intersection.segment_segment(self.AC, s)
-
-        # If one of intersections r1, r2, r3 is segment,
-        # then this segment is result of triangle and segment intersection.
-        if isinstance(r1, Segment):
-            return r1
-        if isinstance(r2, Segment):
-            return r2
-        if isinstance(r3, Segment):
-            return r3
-
-        # Then we have to collect all points.
-        ps = Points()
-        if isinstance(r1, Point):
-            ps.add_unique(r1)
-        if isinstance(r2, Point):
-            ps.add_unique(r2)
-        if isinstance(r3, Point):
-            ps.add_unique(r3)
-
-        # Now result is None, Point or Segment.
-        cnt = ps.count()
-        if cnt == 0:
-            return None
-        elif cnt == 1:
-            return ps[0]
-        else:
-            assert cnt == 2
-            return Segment(ps[0], ps[1])
-
-    #-----------------------------------------------------------------------------------------------
-
     def intersection_with_triangle(self, t):
         """
         Find intersection with another triangle.
@@ -1627,7 +1556,7 @@ class Triangle:
         ps = Points()
 
         for s in self.sides:
-            r = t.intersection_with_segment(s)
+            r = Intersection.segment_triangle(s, t)
             if isinstance(r, Point):
                 ps.add_unique(r)
             elif isinstance(r, Segment):
@@ -1635,7 +1564,7 @@ class Triangle:
                 ps.add_unique(r.B)
 
         for s in t.sides:
-            r = self.intersection_with_segment(s)
+            r = Intersection.segment_triangle(s, self)
             if isinstance(r, Point):
                 ps.add_unique(r)
             elif isinstance(r, Segment):
@@ -2276,7 +2205,57 @@ class Intersection:
             Intersection by segment.
         """
 
-        raise Exception('not implemented')
+        # Find intersection of plane and segment.
+        r = Intersection.segment_plane(s, t.plane)
+
+        # No intersection segment with plane.
+        if r is None:
+            return None
+
+        # Single point on plane.
+        if isinstance(r, Point):
+            p = r
+            if t.is_have_point(p):
+                return p
+            else:
+                return None
+
+        # Segment is in triangle plane.
+        assert isinstance(r, Segment)
+
+        # Find intersections of all triangle sides with segment.
+        r1 = Intersection.segment_segment(t.AB, s)
+        r2 = Intersection.segment_segment(t.BC, s)
+        r3 = Intersection.segment_segment(t.AC, s)
+
+        # If one of intersections r1, r2, r3 is segment,
+        # then this segment is result of triangle and segment intersection
+        # and its whole triangle side.
+        if isinstance(r1, Segment):
+            return r1
+        if isinstance(r2, Segment):
+            return r2
+        if isinstance(r3, Segment):
+            return r3
+
+        # Then we have to collect all points.
+        ps = Points()
+        if isinstance(r1, Point):
+            ps.add_unique(r1)
+        if isinstance(r2, Point):
+            ps.add_unique(r2)
+        if isinstance(r3, Point):
+            ps.add_unique(r3)
+
+        # Now result is None, Point or Segment.
+        cnt = ps.count()
+        if cnt == 0:
+            return None
+        elif cnt == 1:
+            return ps[0]
+        else:
+            assert cnt == 2
+            return Segment(ps[0], ps[1])
 
     #-----------------------------------------------------------------------------------------------
 
