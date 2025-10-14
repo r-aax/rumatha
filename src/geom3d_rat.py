@@ -610,6 +610,336 @@ class Points:
 
 #===================================================================================================
 
+class Line:
+    """
+    Line in space.
+    """
+
+    #-----------------------------------------------------------------------------------------------
+
+    def __init__(self, x0, y0, z0, m, n, p):
+        """
+        Line constructor.
+
+        x = x0 + tm
+        y = y0 + tn
+        z = z0 + tp
+
+        Parameters
+        ----------
+        x0 : Fraction
+            X coordinate of base point.
+        y0 : Fraction
+            Y coordinate of base point.
+        z0 : Fraction
+            Z coordinate of base point.
+        m : Fraction
+            Parameter for X direction.
+        n : Fraction
+            Parameter for Y direction.
+        p : Fraction
+            Parameter for Z direction.
+        """
+
+        # Normalize vector.
+        if m != 0:
+            n = n / m
+            p = p / m
+            m = Fr(1)
+        elif n != 0:
+            p = p / n
+            n = Fr(1)
+        else:
+            assert p != 0
+            p = Fr(1)
+
+        # Normalize point.
+        if m != 0:
+            t = -x0 / m
+            y0 = y0 + t * n
+            z0 = z0 + t * p
+            x0 = Fr(0)
+        elif n != 0:
+            t = -y0 / n
+            x0 = x0 + t * m
+            z0 = z0 + t * p
+            y0 = Fr(0)
+        else:
+            assert p != 0
+            t = -z0 / p
+            x0 = x0 + t * m
+            y0 = y0 + t * n
+            z0 = Fr(0)
+
+        self.x0 = x0
+        self.y0 = y0
+        self.z0 = z0
+        self.m = m
+        self.n = n
+        self.p = p
+
+    #-----------------------------------------------------------------------------------------------
+
+    @staticmethod
+    def from_point_and_vector(p, v):
+        """
+        Constructor from point and vector.
+
+        Parameters
+        ----------
+        p : Point
+            Base point.
+        v : Vector
+            Direction vector.
+
+        Returns
+        -------
+        Line
+            Constructed line.
+        """
+
+        return Line(p.x, p.y, p.z, v.x, v.y, v.z)
+
+    #-----------------------------------------------------------------------------------------------
+
+    @staticmethod
+    def from_points(p1, p2):
+        """
+        Constructor from two points.
+
+        Parameters
+        ----------
+        p1 : Point
+            First point.
+        p2 : Point
+            Second point.
+
+        Returns
+        -------
+        Line
+            Constructed line.
+        """
+
+        return Line.from_point_and_vector(p1, p2 - p1)
+
+    #-----------------------------------------------------------------------------------------------
+
+    def __eq__(self, line):
+        """
+        Check equal.
+
+        Parameters
+        ----------
+        line : Line
+            Line.
+
+        Returns
+        -------
+        bool
+            True - if lines are equal,
+            False - otherwise.
+        """
+
+        return (self.x0 == line.x0) and (self.y0 == line.y0) and (self.z0 == line.z0) \
+               and (self.m == line.m) and (self.n == line.n) and (self.p == line.p)
+
+    #-----------------------------------------------------------------------------------------------
+
+    def __ne__(self, line):
+        """
+        Check not equal.
+
+        Parameters
+        ----------
+        line : Line
+            Line.
+
+        Returns
+        -------
+        bool
+            True - if lines are not equal,
+            False - otherwise.
+        """
+
+        return not (self == line)
+
+    #-----------------------------------------------------------------------------------------------
+
+    def __repr__(self):
+        """
+        String representation.
+
+        Returns
+        -------
+        str
+            String representation.
+        """
+
+        return f'Line(x = {self.x0} + t * {self.m}, '\
+               f'y = {self.y0} + t * {self.n}, '\
+               f'z = {self.z0} + t * {self.p})'
+
+    #-----------------------------------------------------------------------------------------------
+
+    def is_have_point(self, p):
+        """
+        Check if line has point.
+
+        Parameters
+        ----------
+        p : Point
+            Point.
+
+        Returns
+        -------
+        bool
+            True - if line has point,
+            False - otherwise.
+        """
+
+        x, y, z = p.x, p.y, p.z
+        x0, y0, z0, m, n, p = self.x0, self.y0, self.z0, self.m, self.n, self.p
+
+        if m != 0:
+            t = (x - x0) / m
+            return (y == y0 + t * n) and (z == z0 + t * p)
+        elif n != 0:
+            t = (y - y0) / n
+            return (x == x0 + t * m) and (z == z0 + t * p)
+        elif p != 0:
+            t = (z - z0) / p
+            return (x == x0 + t * m) and (y == y0 + t * n)
+        else:
+            assert False
+
+    #-----------------------------------------------------------------------------------------------
+
+    def intersection_with_line(self, line):
+        """
+        Find intersection with line.
+
+        Parameters
+        ----------
+        line : Line
+            Line.
+
+        Returns
+        -------
+        None
+            No intersection.
+        Point
+            Intersection in one point.
+        Line
+            If it is the same line.
+        """
+
+        # First check for equal.
+        if self == line:
+            return line
+
+        # Check for parallel lines.
+        if Vector.vector_product(Vector(self.m, self.n, self.p),
+                                 Vector(line.m, line.n, line.p)).is_null():
+            return None
+
+        # Extract coefficients.
+        x1, y1, z1 = self.x0, self.y0, self.z0
+        m1, n1, p1 = self.m, self.n, self.p
+        x2, y2, z2 = line.x0, line.y0, line.z0
+        m2, n2, p2 = line.m, line.n, line.p
+
+        # Linear equations system.
+        # x1 + t1 * m1 = x2 + t2 * m2
+        # y1 + t1 * n1 = y2 + t2 * n2
+        # z1 + t1 * p1 = z2 + t2 * p2
+        # Move all members to left.
+        # t1 * m1 - t2 * m2 + (x1 - x2) = 0
+        # t1 * n1 - t2 * n2 + (y1 - y2) = 0
+        # t1 * p1 - t2 * p2 + (z1 - z2) = 0
+        m2, n2, p2 = -m2, -n2, -p2
+        dx, dy, dz = x1 - x2, y1 - y2, z1 - z2
+
+        # System in simple form.
+        # m1 * t1 + m2 * t2 + dx = 0 // (1)
+        # n1 * t1 + n2 * t2 + dy = 0 // (2)
+        # p1 * t1 + p2 * t2 + dz = 0 // (3)
+
+        # Function for solving each system of 3.
+        def slv2(m1, m2, dx, n1, n2, dy):
+            # (1) * n1 - (2) * m1
+            #   (m2 * n1 - n2 * m1) * t2 + (dx * n1 - dy * m1) = 0
+            #   t2 = (dy * m1 - dx * n1) / q
+            # (1) * n2 - (2) * m2
+            #   (m1 * n2 - n1 * m2) * t1 + (dx * n2 - dy * m2) = 0
+            #   t1 = (dx * n2 - dy * m2) / q
+            q = m2 * n1 - n2 * m1
+            if q == 0:
+                return None
+            else:
+                return  (dx * n2 - dy * m2) / q, (dy * m1 - dx * n1) / q
+
+        # Try to solve system of equations.
+        r = slv2(m1, m2, dx, n1, n2, dy)
+        if r is None:
+            r = slv2(m1, m2, dx, p1, p2, dz)
+            if r is None:
+                r = slv2(n1, n2, dy, p1, p2, dz)
+        t1, t2 = r
+
+        # Try all equations.
+        if (m1 * t1 + m2 * t2 + dx == 0) \
+            and (n1 * t1 + n2 * t2 + dy == 0) \
+            and (p1 * t1 + p2 * t2 + dz == 0):
+            return Point(x1 + t1 * m1, y1 + t1 * n1, z1 + t1 * p1)
+        else:
+            return None
+
+    #-----------------------------------------------------------------------------------------------
+
+    def intersection_with_segment(self, s):
+        """
+        Find intersection of line and segment.
+
+        Parameters
+        ----------
+        s : Segment
+            Segment.
+
+        Returns
+        -------
+        None
+            If there is no intersection.
+        Point
+            If there is single point.
+        Segment
+            If segment lies in the line.
+        """
+
+        # Construct line from segment.
+        line = Line.from_segment(s)
+
+        # Find intersection of two lines.
+        r = self.intersection_with_line(line)
+
+        if r is None:
+            # No intersection of two lines.
+            return None
+        elif isinstance(r, Point):
+            p = r
+            if s.is_have_point(p):
+                # Common point is in segment.
+                return p
+            else:
+                # Common point is outside segment.
+                return None
+        elif isinstance(r, Line):
+            # Segment lies in line.
+            return s
+        else:
+            assert False
+
+#===================================================================================================
+
 class Segment:
     """
     Segment in space.
@@ -980,336 +1310,6 @@ class Segments:
         """
 
         self.items.sort(key=fun)
-
-#===================================================================================================
-
-class Line:
-    """
-    Line in space.
-    """
-
-    #-----------------------------------------------------------------------------------------------
-
-    def __init__(self, x0, y0, z0, m, n, p):
-        """
-        Line constructor.
-
-        x = x0 + tm
-        y = y0 + tn
-        z = z0 + tp
-
-        Parameters
-        ----------
-        x0 : Fraction
-            X coordinate of base point.
-        y0 : Fraction
-            Y coordinate of base point.
-        z0 : Fraction
-            Z coordinate of base point.
-        m : Fraction
-            Parameter for X direction.
-        n : Fraction
-            Parameter for Y direction.
-        p : Fraction
-            Parameter for Z direction.
-        """
-
-        # Normalize vector.
-        if m != 0:
-            n = n / m
-            p = p / m
-            m = Fr(1)
-        elif n != 0:
-            p = p / n
-            n = Fr(1)
-        else:
-            assert p != 0
-            p = Fr(1)
-
-        # Normalize point.
-        if m != 0:
-            t = -x0 / m
-            y0 = y0 + t * n
-            z0 = z0 + t * p
-            x0 = Fr(0)
-        elif n != 0:
-            t = -y0 / n
-            x0 = x0 + t * m
-            z0 = z0 + t * p
-            y0 = Fr(0)
-        else:
-            assert p != 0
-            t = -z0 / p
-            x0 = x0 + t * m
-            y0 = y0 + t * n
-            z0 = Fr(0)
-
-        self.x0 = x0
-        self.y0 = y0
-        self.z0 = z0
-        self.m = m
-        self.n = n
-        self.p = p
-
-    #-----------------------------------------------------------------------------------------------
-
-    @staticmethod
-    def from_point_and_vector(p, v):
-        """
-        Constructor from point and vector.
-
-        Parameters
-        ----------
-        p : Point
-            Base point.
-        v : Vector
-            Direction vector.
-
-        Returns
-        -------
-        Line
-            Constructed line.
-        """
-
-        return Line(p.x, p.y, p.z, v.x, v.y, v.z)
-
-    #-----------------------------------------------------------------------------------------------
-
-    @staticmethod
-    def from_points(p1, p2):
-        """
-        Constructor from two points.
-
-        Parameters
-        ----------
-        p1 : Point
-            First point.
-        p2 : Point
-            Second point.
-
-        Returns
-        -------
-        Line
-            Constructed line.
-        """
-
-        return Line.from_point_and_vector(p1, p2 - p1)
-
-    #-----------------------------------------------------------------------------------------------
-
-    def __eq__(self, line):
-        """
-        Check equal.
-
-        Parameters
-        ----------
-        line : Line
-            Line.
-
-        Returns
-        -------
-        bool
-            True - if lines are equal,
-            False - otherwise.
-        """
-
-        return (self.x0 == line.x0) and (self.y0 == line.y0) and (self.z0 == line.z0) \
-               and (self.m == line.m) and (self.n == line.n) and (self.p == line.p)
-
-    #-----------------------------------------------------------------------------------------------
-
-    def __ne__(self, line):
-        """
-        Check not equal.
-
-        Parameters
-        ----------
-        line : Line
-            Line.
-
-        Returns
-        -------
-        bool
-            True - if lines are not equal,
-            False - otherwise.
-        """
-
-        return not (self == line)
-
-    #-----------------------------------------------------------------------------------------------
-
-    def __repr__(self):
-        """
-        String representation.
-
-        Returns
-        -------
-        str
-            String representation.
-        """
-
-        return f'Line(x = {self.x0} + t * {self.m}, '\
-               f'y = {self.y0} + t * {self.n}, '\
-               f'z = {self.z0} + t * {self.p})'
-
-    #-----------------------------------------------------------------------------------------------
-
-    def is_have_point(self, p):
-        """
-        Check if line has point.
-
-        Parameters
-        ----------
-        p : Point
-            Point.
-
-        Returns
-        -------
-        bool
-            True - if line has point,
-            False - otherwise.
-        """
-
-        x, y, z = p.x, p.y, p.z
-        x0, y0, z0, m, n, p = self.x0, self.y0, self.z0, self.m, self.n, self.p
-
-        if m != 0:
-            t = (x - x0) / m
-            return (y == y0 + t * n) and (z == z0 + t * p)
-        elif n != 0:
-            t = (y - y0) / n
-            return (x == x0 + t * m) and (z == z0 + t * p)
-        elif p != 0:
-            t = (z - z0) / p
-            return (x == x0 + t * m) and (y == y0 + t * n)
-        else:
-            assert False
-
-    #-----------------------------------------------------------------------------------------------
-
-    def intersection_with_line(self, line):
-        """
-        Find intersection with line.
-
-        Parameters
-        ----------
-        line : Line
-            Line.
-
-        Returns
-        -------
-        None
-            No intersection.
-        Point
-            Intersection in one point.
-        Line
-            If it is the same line.
-        """
-
-        # First check for equal.
-        if self == line:
-            return line
-
-        # Check for parallel lines.
-        if Vector.vector_product(Vector(self.m, self.n, self.p),
-                                 Vector(line.m, line.n, line.p)).is_null():
-            return None
-
-        # Extract coefficients.
-        x1, y1, z1 = self.x0, self.y0, self.z0
-        m1, n1, p1 = self.m, self.n, self.p
-        x2, y2, z2 = line.x0, line.y0, line.z0
-        m2, n2, p2 = line.m, line.n, line.p
-
-        # Linear equations system.
-        # x1 + t1 * m1 = x2 + t2 * m2
-        # y1 + t1 * n1 = y2 + t2 * n2
-        # z1 + t1 * p1 = z2 + t2 * p2
-        # Move all members to left.
-        # t1 * m1 - t2 * m2 + (x1 - x2) = 0
-        # t1 * n1 - t2 * n2 + (y1 - y2) = 0
-        # t1 * p1 - t2 * p2 + (z1 - z2) = 0
-        m2, n2, p2 = -m2, -n2, -p2
-        dx, dy, dz = x1 - x2, y1 - y2, z1 - z2
-
-        # System in simple form.
-        # m1 * t1 + m2 * t2 + dx = 0 // (1)
-        # n1 * t1 + n2 * t2 + dy = 0 // (2)
-        # p1 * t1 + p2 * t2 + dz = 0 // (3)
-
-        # Function for solving each system of 3.
-        def slv2(m1, m2, dx, n1, n2, dy):
-            # (1) * n1 - (2) * m1
-            #   (m2 * n1 - n2 * m1) * t2 + (dx * n1 - dy * m1) = 0
-            #   t2 = (dy * m1 - dx * n1) / q
-            # (1) * n2 - (2) * m2
-            #   (m1 * n2 - n1 * m2) * t1 + (dx * n2 - dy * m2) = 0
-            #   t1 = (dx * n2 - dy * m2) / q
-            q = m2 * n1 - n2 * m1
-            if q == 0:
-                return None
-            else:
-                return  (dx * n2 - dy * m2) / q, (dy * m1 - dx * n1) / q
-
-        # Try to solve system of equations.
-        r = slv2(m1, m2, dx, n1, n2, dy)
-        if r is None:
-            r = slv2(m1, m2, dx, p1, p2, dz)
-            if r is None:
-                r = slv2(n1, n2, dy, p1, p2, dz)
-        t1, t2 = r
-
-        # Try all equations.
-        if (m1 * t1 + m2 * t2 + dx == 0) \
-            and (n1 * t1 + n2 * t2 + dy == 0) \
-            and (p1 * t1 + p2 * t2 + dz == 0):
-            return Point(x1 + t1 * m1, y1 + t1 * n1, z1 + t1 * p1)
-        else:
-            return None
-
-    #-----------------------------------------------------------------------------------------------
-
-    def intersection_with_segment(self, s):
-        """
-        Find intersection of line and segment.
-
-        Parameters
-        ----------
-        s : Segment
-            Segment.
-
-        Returns
-        -------
-        None
-            If there is no intersection.
-        Point
-            If there is single point.
-        Segment
-            If segment lies in the line.
-        """
-
-        # Construct line from segment.
-        line = Line.from_segment(s)
-
-        # Find intersection of two lines.
-        r = self.intersection_with_line(line)
-
-        if r is None:
-            # No intersection of two lines.
-            return None
-        elif isinstance(r, Point):
-            p = r
-            if s.is_have_point(p):
-                # Common point is in segment.
-                return p
-            else:
-                # Common point is outside segment.
-                return None
-        elif isinstance(r, Line):
-            # Segment lies in line.
-            return s
-        else:
-            assert False
 
 #===================================================================================================
 
