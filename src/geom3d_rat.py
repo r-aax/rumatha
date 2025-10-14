@@ -809,87 +809,6 @@ class Line:
 
     #-----------------------------------------------------------------------------------------------
 
-    def intersection_with_line(self, line):
-        """
-        Find intersection with line.
-
-        Parameters
-        ----------
-        line : Line
-            Line.
-
-        Returns
-        -------
-        None
-            No intersection.
-        Point
-            Intersection in one point.
-        Line
-            If it is the same line.
-        """
-
-        # First check for equal.
-        if self == line:
-            return line
-
-        # Check for parallel lines.
-        if Vector.vector_product(self.v, line.v).is_null():
-            return None
-
-        # Extract coefficients.
-        x1, y1, z1 = self.P0.x, self.P0.y, self.P0.z
-        m1, n1, p1 = self.v.x, self.v.y, self.v.z
-        x2, y2, z2 = line.P0.x, line.P0.y, line.P0.z
-        m2, n2, p2 = line.v.x, line.v.y, line.v.z
-
-        # Linear equations system.
-        # x1 + t1 * m1 = x2 + t2 * m2
-        # y1 + t1 * n1 = y2 + t2 * n2
-        # z1 + t1 * p1 = z2 + t2 * p2
-        # Move all members to left.
-        # t1 * m1 - t2 * m2 + (x1 - x2) = 0
-        # t1 * n1 - t2 * n2 + (y1 - y2) = 0
-        # t1 * p1 - t2 * p2 + (z1 - z2) = 0
-        m2, n2, p2 = -m2, -n2, -p2
-        dx, dy, dz = x1 - x2, y1 - y2, z1 - z2
-
-        # System in simple form.
-        # m1 * t1 + m2 * t2 + dx = 0 // (1)
-        # n1 * t1 + n2 * t2 + dy = 0 // (2)
-        # p1 * t1 + p2 * t2 + dz = 0 // (3)
-
-        # Function for solving each system of 3.
-        def slv2(m1, m2, dx, n1, n2, dy):
-            # (1) * n1 - (2) * m1
-            #   (m2 * n1 - n2 * m1) * t2 + (dx * n1 - dy * m1) = 0
-            #   t2 = (dy * m1 - dx * n1) / q
-            # (1) * n2 - (2) * m2
-            #   (m1 * n2 - n1 * m2) * t1 + (dx * n2 - dy * m2) = 0
-            #   t1 = (dx * n2 - dy * m2) / q
-            q = m2 * n1 - n2 * m1
-            if q == 0:
-                return None
-            else:
-                return  (dx * n2 - dy * m2) / q, (dy * m1 - dx * n1) / q
-
-        # Try to solve system of equations.
-        r = slv2(m1, m2, dx, n1, n2, dy)
-        if r is None:
-            r = slv2(m1, m2, dx, p1, p2, dz)
-            if r is None:
-                r = slv2(n1, n2, dy, p1, p2, dz)
-        t1, t2 = r
-
-        # Try all equations.
-        if (m1 * t1 + m2 * t2 + dx == 0) \
-            and (n1 * t1 + n2 * t2 + dy == 0) \
-            and (p1 * t1 + p2 * t2 + dz == 0):
-            return Point(x1 + t1 * m1, y1 + t1 * n1, z1 + t1 * p1)
-        else:
-            return None
-
-    #-----------------------------------------------------------------------------------------------
-
     def intersection_with_segment(self, s):
         """
         Find intersection of line and segment.
@@ -1142,7 +1061,7 @@ class Segment:
         # Find intersection of two containing lines.
         self_line = self.line
         line = s.line
-        r = self_line.intersection_with_line(line)
+        r = Intersection.line_line(self_line, line)
 
         # No intersection.
         if r is None:
@@ -2246,7 +2165,65 @@ class Intersection:
             The same line.
         """
 
-        raise Exception('not implemented')
+        # First check for equal.
+        if ln1 == ln2:
+            return ln1
+
+        # Check for parallel lines.
+        if Vector.vector_product(ln1.v, ln2.v).is_null():
+            return None
+
+        # Extract coefficients.
+        x1, y1, z1 = ln1.P0.x, ln1.P0.y, ln1.P0.z
+        m1, n1, p1 = ln1.v.x, ln1.v.y, ln1.v.z
+        x2, y2, z2 = ln2.P0.x, ln2.P0.y, ln2.P0.z
+        m2, n2, p2 = ln2.v.x, ln2.v.y, ln2.v.z
+
+        # Linear equations system.
+        # x1 + t1 * m1 = x2 + t2 * m2
+        # y1 + t1 * n1 = y2 + t2 * n2
+        # z1 + t1 * p1 = z2 + t2 * p2
+        # Move all members to left.
+        # t1 * m1 - t2 * m2 + (x1 - x2) = 0
+        # t1 * n1 - t2 * n2 + (y1 - y2) = 0
+        # t1 * p1 - t2 * p2 + (z1 - z2) = 0
+        m2, n2, p2 = -m2, -n2, -p2
+        dx, dy, dz = x1 - x2, y1 - y2, z1 - z2
+
+        # System in simple form.
+        # m1 * t1 + m2 * t2 + dx = 0 // (1)
+        # n1 * t1 + n2 * t2 + dy = 0 // (2)
+        # p1 * t1 + p2 * t2 + dz = 0 // (3)
+
+        # Function for solving each system of 3.
+        def slv2(m1, m2, dx, n1, n2, dy):
+            # (1) * n1 - (2) * m1
+            #   (m2 * n1 - n2 * m1) * t2 + (dx * n1 - dy * m1) = 0
+            #   t2 = (dy * m1 - dx * n1) / q
+            # (1) * n2 - (2) * m2
+            #   (m1 * n2 - n1 * m2) * t1 + (dx * n2 - dy * m2) = 0
+            #   t1 = (dx * n2 - dy * m2) / q
+            q = m2 * n1 - n2 * m1
+            if q == 0:
+                return None
+            else:
+                return  (dx * n2 - dy * m2) / q, (dy * m1 - dx * n1) / q
+
+        # Try to solve system of equations.
+        r = slv2(m1, m2, dx, n1, n2, dy)
+        if r is None:
+            r = slv2(m1, m2, dx, p1, p2, dz)
+            if r is None:
+                r = slv2(n1, n2, dy, p1, p2, dz)
+        t1, t2 = r
+
+        # Try all equations.
+        if (m1 * t1 + m2 * t2 + dx == 0) \
+            and (n1 * t1 + n2 * t2 + dy == 0) \
+            and (p1 * t1 + p2 * t2 + dz == 0):
+            return Point(x1 + t1 * m1, y1 + t1 * n1, z1 + t1 * p1)
+        else:
+            return None
 
     #--------------------------------------------------------------------------------------
 
