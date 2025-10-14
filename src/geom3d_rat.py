@@ -2078,6 +2078,652 @@ class Triangle:
 
 #===================================================================================================
 
+class Intersection:
+    """
+    Intersection of two geometrical objects.
+    """
+
+    #-----------------------------------------------------------------------------------------------
+
+    @staticmethod
+    def point_point(p1, p2):
+        """
+        Intersection of two points.
+
+        Parameters
+        ----------
+        p1 : Point
+            First point.
+        p2 : Point.
+            Secod point.
+
+        Returns
+        -------
+        None
+            No intersection.
+        Point
+            Equal points.
+        """
+
+        raise Exception('not implemented')
+
+    #-----------------------------------------------------------------------------------------------
+
+    @staticmethod
+    def point_line(p, ln):
+        """
+        Intersection of point and line.
+
+        Parameters
+        ----------
+        p : Point
+            Point.
+        ln : Line
+            Line.
+
+        Returns
+        -------
+        None
+            No intersection.
+        Point
+            Point is on line.
+        """
+
+        raise Exception('not implemented')
+
+    #-----------------------------------------------------------------------------------------------
+
+    @staticmethod
+    def point_segment(p, s):
+        """
+        Intersection of point and segment.
+
+        Parameters
+        ----------
+        p : Point
+            Point.
+        s : Segment
+            Segment.
+
+        Returns
+        -------
+        None
+            No intersection.
+        Point
+            Point is on segment.
+        """
+
+        raise Exception('not implemented')
+
+    #-----------------------------------------------------------------------------------------------
+
+    @staticmethod
+    def point_plane(p, pl):
+        """
+        Intersection of point and plane.
+
+        Parameters
+        ----------
+        p : Point
+            Point.
+        pl : Plane
+            Plane.
+
+        Returns
+        -------
+        None
+            No intersection.
+        Point
+            Point is on plane.
+        """
+
+        raise Exception('not implemented')
+
+    #-----------------------------------------------------------------------------------------------
+
+    @staticmethod
+    def point_triangle(p, t):
+        """
+        Intersection of point and triangle.
+
+        Parameters
+        ----------
+        p : Point
+            Point.
+        t : Triangle
+            Triangle.
+
+        Returns
+        -------
+        None
+            No intersection.
+        Point
+            Point is inside triangle.
+        """
+
+        raise Exception('not implemented')
+
+    #-----------------------------------------------------------------------------------------------
+
+    @staticmethod
+    def line_point(ln, p):
+        """
+        Intersection of line and point.
+
+        Parameters
+        ----------
+        ln : Line
+            Line.
+        p : Point
+            Point.
+
+        Returns
+        -------
+        None
+            No intersection.
+        Point
+            Point is on line.
+        """
+
+        return Intersection.point_line(p, ln)
+
+    #-----------------------------------------------------------------------------------------------
+
+    @staticmethod
+    def line_line(ln1, ln2):
+        """
+        Intersection of two lines.
+
+        Parameters
+        ----------
+        ln1 : Line
+            First line.
+        ln2 : Line
+            Second line.
+
+        Returns
+        -------
+        None
+            No intersection.
+        Point
+            Single points intersection.
+        Line
+            The same line.
+        """
+
+        raise Exception('not implemented')
+
+    #--------------------------------------------------------------------------------------
+
+    @staticmethod
+    def line_segment(ln, s):
+        """
+        Intersection of line and segment.
+
+        Parameters
+        ----------
+        ln : Line
+            Line.
+        s : Segment
+            Segment.
+
+        Returns
+        -------
+        None
+            No intersection.
+        Point
+            Single point of intersection.
+        Segment
+            Segment is on line.
+        """
+
+        raise Exception('not implemented')
+
+    #-----------------------------------------------------------------------------------------------
+
+    @staticmethod
+    def line_plane(ln, pl):
+        """
+        Intersection of line and plane.
+
+        Parameters
+        ----------
+        ln : Line
+            Line.
+        pl : Plane
+            Plane.
+
+        Returns
+        -------
+        None
+            No intersection.
+        Point
+            Single point of intersection.
+        Line
+            Line is in plane.
+        """
+
+        raise Exception('not implemented')
+
+    #-----------------------------------------------------------------------------------------------
+
+    @staticmethod
+    def line_triangle(ln, t):
+        """
+        Intersection of line and triangle.
+
+        Parameters
+        ----------
+        ln : Line
+            Line.
+        t : Triangle
+            Triangle.
+
+        Returns
+        -------
+        None
+            No intersection.
+        Point
+            Single point of intersection.
+        Segment
+            Intersection by segment.
+        """
+
+        raise Exception('not implemented')
+
+    #-----------------------------------------------------------------------------------------------
+
+    @staticmethod
+    def segment_point(s, p):
+        """
+        Intersection of segment and point.
+
+        Parameters
+        ----------
+        s : Segment
+            Segment.
+        p : Point
+            Point.
+
+        Returns
+        -------
+        None
+            No intersection.
+        Point
+            Point is on segment.
+        """
+
+        return Intersection.point_segment(p, s)
+
+    #-----------------------------------------------------------------------------------------------
+
+    @staticmethod
+    def segment_line(s, ln):
+        """
+        Intersection of segment and line.
+
+        Parameters
+        ----------
+        s : Segment
+            Segment.
+        ln : Line
+            Line.
+
+        Returns
+        -------
+        None
+            No intersection.
+        Point
+            Single point of intersection.
+        Segment
+            Segment is on line.
+        """
+
+        return Intersection.line_segment(ln, s)
+
+    #-----------------------------------------------------------------------------------------------
+
+    @staticmethod
+    def segment_segment(s1, s2):
+        """
+        Intersection of two segments.
+
+        Parameters
+        ----------
+        s1 : Segment
+            Segment.
+        s2 : Segment
+            Segment.
+
+        Returns
+        -------
+        None
+            No intersection.
+        Point
+            Single point of intersection.
+        Segment
+            Intersection by segment.
+        """
+
+        raise Exception('not implemented')
+
+    #-----------------------------------------------------------------------------------------------
+
+    @staticmethod
+    def segment_plane(s, pl):
+        """
+        Intersection of segment and plane.
+
+        Parameters
+        ----------
+        s : Segment
+            Segment.
+        pl : Plane
+            Plane.
+
+        Returns
+        -------
+        None
+            No intersection.
+        Point
+            Single point of intersection.
+        """
+
+        raise Exception('not implemented')
+
+    #-----------------------------------------------------------------------------------------------
+
+    @staticmethod
+    def segment_triangle(s, t):
+        """
+        Intersection of segment and triangle.
+
+        Parameters
+        ----------
+        s : Segment
+            Segment.
+        t : Triangle
+            Triangle.
+
+        Returns
+        -------
+        None
+            No intersection.
+        Point
+            Single point of intersection.
+        Segment
+            Intersection by segment.
+        """
+
+        raise Exception('not implemented')
+
+    #-----------------------------------------------------------------------------------------------
+
+    @staticmethod
+    def plane_point(pl, p):
+        """
+        Intersection of plane and segment.
+
+        Parameters
+        ----------
+        pl : Plane
+            Plane.
+        p : Point
+            Point.
+
+        Returns
+        -------
+        None
+            No intersection.
+        Point
+            Point is on plane.
+        """
+
+        return Intersection.point_plane(p, pl)
+
+    #-----------------------------------------------------------------------------------------------
+
+    @staticmethod
+    def plane_line(pl, ln):
+        """
+        Intersection of plane with line.
+
+        Parameters
+        ----------
+        pl : Plane
+            Plane.
+        ln : Line
+            Line.
+
+        Returns
+        -------
+        None
+            No intersection.
+        Point
+            Single point of intersection.
+        Line
+            Line is in plane.
+        """
+
+        return Intersection.line_plane(ln, pl)
+
+    #-----------------------------------------------------------------------------------------------
+
+    @staticmethod
+    def plane_segment(pl, s):
+        """
+        Intersection of plane and segment.
+
+        Parameters
+        ----------
+        pl : Plane
+            Plane.
+        s : Segment
+            Segment.
+
+        Returns
+        -------
+        None
+            No intersection.
+        Point
+            Single point of intersection.
+        Segment
+            Segment is in plane.
+        """
+
+        return Intersection.segment_plane(s, pl)
+
+    #-----------------------------------------------------------------------------------------------
+
+    @staticmethod
+    def plane_plane(pl1, pl2):
+        """
+        Intersection of two planes.
+
+        Parameters
+        ----------
+        pl1 : Plane
+            First plane.
+        pl2 : Plane
+            Second plane.
+
+        Returns
+        -------
+        None
+            Parallel planes.
+        Line
+            Intersect planes.
+        """
+
+        raise Exception('not implemented')
+
+    #-----------------------------------------------------------------------------------------------
+
+    @staticmethod
+    def plane_triangle(pl, t):
+        """
+        Intersection of plane and triangle.
+
+        Parameters
+        ----------
+        pl : Plane
+            Plane.
+        t : Triangle
+            Triangle.
+
+        Returns
+        -------
+        None
+            No intersection.
+        Point
+            Single point of intersection.
+        Segment
+            Segment intersection.
+        Triangle
+            Triangle is in plane.
+        """
+
+        raise Exception('not implemented')
+
+    #-----------------------------------------------------------------------------------------------
+
+    @staticmethod
+    def triangle_point(t, p):
+        """
+        Intersection of triangle with point.
+
+        Parameters
+        ----------
+        t : Triangle
+            Triangle.
+        p : Point
+            Point.
+
+        Returns
+        -------
+        None
+            No intersection.
+        Point
+            Point is in triangle.
+        """
+
+        return Intersection.point_triangle(p, t)
+
+    #-----------------------------------------------------------------------------------------------
+
+    @staticmethod
+    def triangle_line(t, ln):
+        """
+        Intersection of triangle and line.
+
+        Parameters
+        ----------
+        t : Triangle
+            Triangle.
+        ln : Line
+            Line.
+
+        Returns
+        -------
+        None
+            No intersection.
+        Point
+            Single point intersection.
+        Segment
+            Intersection by segment.
+        """
+
+        return Intersection.line_triangle(ln, t)
+
+    #-----------------------------------------------------------------------------------------------
+
+    @staticmethod
+    def triangle_segment(t, s):
+        """
+        Intersection of triangle with segment.
+
+        Parameters
+        ----------
+        t : Triangle
+            Triangle.
+        s : Segment
+            Segment.
+
+        Returns
+        -------
+        None
+            No intersection.
+        Point
+            Single point of intersection.
+        Segment
+            Intersection by segment.
+        """
+
+        return Intersection.segment_triangle(s, t)
+
+    #-----------------------------------------------------------------------------------------------
+
+    @staticmethod
+    def triangle_plane(t, pl):
+        """
+        Intersection triangle with plane.
+
+        Parameters
+        ----------
+        t : Triangle
+            Triangle.
+        pl : Plane
+            Plane.
+
+        Returns
+        -------
+        None
+            No intersection.
+        Point
+            Single point of intersection.
+        Segment
+            Segment intersection.
+        Triangle
+            Triangle is in plane.
+        """
+
+        return Intersection.plane_triangle(pl, t)
+
+    #-----------------------------------------------------------------------------------------------
+
+    @staticmethod
+    def triangle_triangle(t1, t2):
+        """
+        Intersection of two triangles.
+
+        Parameters
+        ----------
+        t1 : Triangle
+            First triangle.
+        t2 : Triangle
+            Second triangle.
+
+        Returns
+        -------
+        None
+            No intersection.
+        Point
+            Single point of intersection.
+        Segment
+            Intersection by segment.
+        Triangle
+            Triangle intersection.
+        Points
+            Convex figure of intersection
+            4 - convex quadrangle,
+            5 - convex pentagon,
+            6 - convex hexagon.
+        """
+
+        raise Exception('not implemented')
+
+#===================================================================================================
+
 # Global objects.
 O = Point(Fr(0), Fr(0), Fr(0))
 X = Point(Fr(1), Fr(0), Fr(0))
