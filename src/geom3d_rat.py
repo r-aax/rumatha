@@ -638,6 +638,9 @@ class Segment:
         # Keep point in sorted way.
         self.sort_points()
 
+        # Construct line for this segment.
+        self.line = Line.from_points(self.A, self.B)
+
     #-----------------------------------------------------------------------------------------------
 
     def __eq__(self, s):
@@ -756,9 +759,7 @@ class Segment:
             False - otherwise.
         """
 
-        line = Line.from_segment(self)
-
-        return line.is_have_point(p) and p.is_between(self.A, self.B)
+        return self.line.is_have_point(p) and p.is_between(self.A, self.B)
 
     #-----------------------------------------------------------------------------------------------
 
@@ -1093,26 +1094,6 @@ class Line:
         """
 
         return Line.from_point_and_vector(p1, p2 - p1)
-
-    #-----------------------------------------------------------------------------------------------
-
-    @staticmethod
-    def from_segment(s):
-        """
-        Constructor from segment.
-
-        Parameters
-        ----------
-        s : Segment
-            Segment.
-
-        Returns
-        -------
-        Line
-            Constructed line.
-        """
-
-        return Line.from_points(s.A, s.B)
 
     #-----------------------------------------------------------------------------------------------
 
@@ -2133,7 +2114,7 @@ class Intersection:
             Point is on line.
         """
 
-        raise Exception('not implemented')
+        raise ln.is_have_point(p)
 
     #-----------------------------------------------------------------------------------------------
 
