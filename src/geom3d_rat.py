@@ -317,6 +317,30 @@ class Point:
 
     #-----------------------------------------------------------------------------------------------
 
+    def is_incident(self, obj):
+        """
+        Check if point is incident to obj (segment or triangle).
+
+        Parameters
+        ----------
+        obj : Segment | Triangle
+            Object.
+
+        Returns
+        -------
+        bool
+            True - if point is incident to object,
+            False - otherwise.
+        """
+
+        if isinstance(obj, Segment):
+            return (self == obj.A) or (self == obj.B)
+        else:
+            assert isinstance(obj, Triangle)
+            return (self == obj.A) or (self == obj.B) or (self == obj.C)
+
+    #-----------------------------------------------------------------------------------------------
+
     def projection_OXY(self):
         """
         Projection on OXY (ignore Z coord).
@@ -942,6 +966,30 @@ class Segment:
 
     #-----------------------------------------------------------------------------------------------
 
+    def is_incident(self, obj):
+        """
+        Check if segment is incident to object (point or triangle).
+
+        Parameters
+        ----------
+        obj : Point | Triangle
+            Object.
+
+        Returns
+        -------
+        bool
+            True - if segment is incident to point or triangle,
+            False - otherwise.
+        """
+
+        if isinstance(obj, Point):
+            return (self.A == obj) or (self.B == obj)
+        else:
+            assert isinstance(obj, Triangle)
+            return (self == obj.AB) or (self == obj.BC) or (self == obj.AC)
+
+    #-----------------------------------------------------------------------------------------------
+
     def is_have_point(self, p):
         """
         Check if segment has point.
@@ -1456,6 +1504,30 @@ class Triangle:
         # Then draw points over sides.
         for p in self.points:
             p.draw(plt, color=color, size=size)
+
+    #-----------------------------------------------------------------------------------------------
+
+    def is_incident(self, obj):
+        """
+        Check if triangle is incident to point or segment.
+
+        Parameters
+        ----------
+        obj : Point | Segment
+            Object.
+
+        Returns
+        -------
+        bool
+            True - if triangle is incident to point or segment,
+            False - otherwise.
+        """
+
+        if isinstance(obj, Point):
+            return (self.A == obj) or (self.B == obj) or (self.C == obj)
+        else:
+            assert isinstance(obj, Segment)
+            return (self.AB == obj) or (self.BC == obj) or (self.AC == obj)
 
     #-----------------------------------------------------------------------------------------------
 
@@ -2582,8 +2654,8 @@ def test():
     assert not TXYZ.is_have_point(Point(Fr(-1), Fr(-1), Fr(-1)))
 
     # Check lines intersections.
-    assert OX.intersection_with_line(OY) == O
-    assert OX.intersection_with_line(OZ) == O
+    assert Intersection.line_line(OX, OY) == O
+    assert Intersection.line_line(OX, OZ) == O
 
 #---------------------------------------------------------------------------------------------------
 

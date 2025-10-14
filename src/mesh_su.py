@@ -1431,32 +1431,53 @@ class Mesh:
 
 #===================================================================================================
 
+def mesh_triangles_list(mesh):
+    """
+    Get list of triangles.
+
+    Parameters
+    ----------
+    mesh : Mesh
+        Mesh.
+
+    Returns
+    -------
+    [geom3d_rat.Triangle]
+        List of triangles.
+    """
+
+    return [geom3d_rat.Triangle(f.nodes[0].p, f.nodes[1].p, f.nodes[2].p) for f in mesh.faces]
+
+#---------------------------------------------------------------------------------------------------
+
 if __name__ == '__main__':
 
     # Load mesh and convert coords to fractions.
+    # Extract list of triangles.
     in_mesh = Mesh('../data/meshes/tetrahedron_2.dat')
     in_mesh.convert_coordinates_real_to_rat(10)
+    ts = mesh_triangles_list(in_mesh)
 
     # Create result mesh.
     out_mesh = Mesh()
     zone = out_mesh.add_zone('SINGLE ZONE')
 
-    # Process every target cell.
-    for face in in_mesh.faces:
-
-        # Get triangle of the current face.
-        tri = geom3d_rat.Triangle(face.nodes[0].p, face.nodes[1].p, face.nodes[2].p)
+    # Process every triangle.
+    for tri in ts:
 
         # Check if triangle t is intersection triangle.
         is_tri_intersection = False
-        for f in in_mesh.faces:
-            t = geom3d_rat.Triangle(f.nodes[0].p, f.nodes[1].p, f.nodes[2].p)
-            r = tri.intersection_with_triangle(t)
-            if not r is None:
-                if (isinstance(r, geom3d_rat.Point) and (r != tri.A) and (r != tri.B) and (r != tri.C)) \
-                   or (isinstance(r, geom3d_rat.Segment) and (r != tri.AB) and (r != tri.BC) and (r != tri.AC)):
-                    is_tri_intersection = True
-                    break
+        for t in ts:
+            if t != tri:
+                r = geom3d_rat.Intersection.triangle_triangle(tri, t)
+                if r is None:
+                    pass
+                elif isinstance(r, geom3d_rat.Point) or isinstance(r, geom3d_rat.Segment):
+                    if not tri.is_incident(r):
+                        is_tri_intersection = True
+                        break
+                else:
+                    raise Exception('complex intersection: not implemented')
 
         # Transfer triangle to mesh without any changes.
         if not is_tri_intersection:
