@@ -2114,7 +2114,11 @@ class Intersection:
             Point is on line.
         """
 
-        raise ln.is_have_point(p)
+        # Point is on line or there is no intersection.
+        if ln.is_have_point(p):
+            return p
+        else:
+            return None
 
     #-----------------------------------------------------------------------------------------------
 
@@ -2138,7 +2142,11 @@ class Intersection:
             Point is on segment.
         """
 
-        return s.is_have_point(p)
+        # Point is on segment or there is no intersection.
+        if s.is_have_point(p):
+            return p
+        else:
+            return None
 
     #-----------------------------------------------------------------------------------------------
 
@@ -2162,7 +2170,11 @@ class Intersection:
             Point is on plane.
         """
 
-        raise Exception('not implemented')
+        # Point is on plane or there is no intersection.
+        if pl.is_have_point(p):
+            return p
+        else:
+            return None
 
     #-----------------------------------------------------------------------------------------------
 
@@ -2186,7 +2198,11 @@ class Intersection:
             Point is inside triangle.
         """
 
-        raise Exception('not implemented')
+        # Point is in triangle or there is no intersection.
+        if t.is_have_point(p):
+            return p
+        else:
+            return None
 
     #-----------------------------------------------------------------------------------------------
 
