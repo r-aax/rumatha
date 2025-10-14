@@ -2138,7 +2138,7 @@ class Intersection:
             Point is on segment.
         """
 
-        raise Exception('not implemented')
+        return s.is_have_point(p)
 
     #-----------------------------------------------------------------------------------------------
 
