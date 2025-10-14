@@ -1443,11 +1443,27 @@ if __name__ == '__main__':
 
     # Process every target cell.
     for face in in_mesh.faces:
-        a, b, c = face.nodes[0], face.nodes[1], face.nodes[2]
-        a = out_mesh.add_node(a.p, zone, True)
-        b = out_mesh.add_node(b.p, zone, True)
-        c = out_mesh.add_node(c.p, zone, True)
-        out_mesh.add_face(a, b, c, zone)
+
+        # Get triangle of the current face.
+        tri = geom3d_rat.Triangle(face.nodes[0].p, face.nodes[1].p, face.nodes[2].p)
+
+        # Check if triangle t is intersection triangle.
+        is_tri_intersection = False
+        for f in in_mesh.faces:
+            t = geom3d_rat.Triangle(f.nodes[0].p, f.nodes[1].p, f.nodes[2].p)
+            r = tri.intersection_with_triangle(t)
+            if not r is None:
+                if (isinstance(r, geom3d_rat.Point) and (r != tri.A) and (r != tri.B) and (r != tri.C)) \
+                   or (isinstance(r, geom3d_rat.Segment) and (r != tri.AB) and (r != tri.BC) and (r != tri.AC)):
+                    is_tri_intersection = True
+                    break
+
+        # Transfer triangle to mesh without any changes.
+        if not is_tri_intersection:
+            a = out_mesh.add_node(tri.A, zone, True)
+            b = out_mesh.add_node(tri.B, zone, True)
+            c = out_mesh.add_node(tri.C, zone, True)
+            out_mesh.add_face(a, b, c, zone)
 
     # Save result mesh.
     out_mesh.convert_coordinates_rat_to_real()

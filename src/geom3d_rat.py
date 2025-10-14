@@ -2032,12 +2032,15 @@ class Triangle:
 
         Returns
         -------
+        None
+            There is no intersection.
+        Point
+            There is one point intersection.
+        Segment
+            There is two points intersection.
         [Point]
             Set of points, which form convex full.
             May contain points from 0 to 6.
-            0 - no intersection,
-            1 - one point,
-            2 - single segment,
             3 - triangle,
             4 - convex quadrangle,
             5 - convex pentagon,
@@ -2062,7 +2065,16 @@ class Triangle:
                 ps.add_unique(r.A)
                 ps.add_unique(r.B)
 
-        return ps
+        cnt = ps.count()
+
+        if cnt == 0:
+            return None
+        elif cnt == 1:
+            return ps[0]
+        elif cnt == 2:
+            return Segment(ps[0], ps[1])
+        else:
+            return ps
 
 #===================================================================================================
 
