@@ -1402,10 +1402,4 @@ if __name__ == '__main__':
             r = ts[i].intersection_with_triangle(ts[j])
             print(f'    {r}')
 
-            # for test
-            break
-
-        # for test
-        break
-
 # ==================================================================================================

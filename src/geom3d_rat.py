@@ -402,6 +402,21 @@ class Vector(Point):
 
     #-----------------------------------------------------------------------------------------------
 
+    def is_null(self):
+        """
+        Check if vector is null.
+
+        Returns
+        -------
+        bool
+            True - if vector is null,
+            False - otherwise.
+        """
+
+        return (self.x == 0) and (self.y == 0) and (self.z == 0)
+
+    #-----------------------------------------------------------------------------------------------
+
     @staticmethod
     def dot(v1, v2):
         """
@@ -421,6 +436,30 @@ class Vector(Point):
         """
 
         return v1.x * v2.x + v1.y * v2.y + v1.z * v2.z
+
+    #-----------------------------------------------------------------------------------------------
+
+    @staticmethod
+    def vector_product(a, b):
+        """
+        Vector product.
+
+        Parameters
+        ----------
+        a : Vector
+            First vector.
+        b : Vector
+            Second vector.
+
+        Returns
+        -------
+        Vector
+            Result vector.
+        """
+
+        return Vector(a.y * b.z - a.z * b.y,
+                      a.z * b.x - a.x * b.z,
+                      a.x * b.y - a.y * b.x)
 
 #===================================================================================================
 
@@ -714,6 +753,91 @@ class Segment:
 
         if self.A > self.B:
             self.A, self.B = self.B, self.A
+
+    #-----------------------------------------------------------------------------------------------
+
+    def intersection_with_line(self, line):
+        """
+        Find intersection with line.
+
+        Parameters
+        ----------
+        line : Line
+            Line.
+
+        Returns
+        -------
+        None
+            If there is no intersection.
+        Point
+            If there is only one common point.
+        Segment
+            If segment lie in line.
+        """
+
+        return line.intersection_with_segment(self)
+
+    #-----------------------------------------------------------------------------------------------
+
+    def intersection_with_segment(self, s):
+        """
+        Find intersection of two segments.
+
+        Parameters
+        ----------
+        s : Segment
+            Segment.
+
+        Returns
+        -------
+        None
+            If there is no intersection.
+        Point
+            If there is only one common point.
+        Segment
+            If both segments lie on one line.
+        """
+
+        # Find intersection of two containing lines.
+        self_line = Line.from_segment(self)
+        line = Line.from_segment(s)
+        r = self_line.intersection_with_line(line)
+
+        # No intersection.
+        if r is None:
+            return None
+
+        # One point intersection.
+        # Both segments must have it.
+        if isinstance(r, Point):
+            p = r
+            if self.is_have_point(p) and s.is_have_point(p):
+                return p
+            else:
+                return None
+
+        # So both segments lie in one line.
+        assert isinstance(r, Line)
+
+        A1, B1 = self.A, self.B
+        A2, B2 = s.A, s.B
+        assert A1 <= B1
+        assert A2 <= B2
+
+        # A1       B1       A2       B2
+        # *--------*........*--------*
+        #
+        # A2       B2       A1       B1
+        #*---------*........*--------*
+        if (A2 > B1) or (A1 > B2):
+            return None
+
+        # A1       A2       B1       B2
+        # *--------*========*--------*
+        #
+        # A2       A1       B2       B1
+        # *--------*========*--------*
+        return Segment(max(A1, A2), min(B1, B2))
 
 #===================================================================================================
 
@@ -1089,6 +1213,11 @@ class Line:
         if self == line:
             return line
 
+        # Check for parallel lines.
+        if Vector.vector_product(Vector(self.m, self.n, self.p),
+                                 Vector(line.m, line.n, line.p)).is_null():
+            return None
+
         # Extract coefficients.
         x1, y1, z1 = self.x0, self.y0, self.z0
         m1, n1, p1 = self.m, self.n, self.p
@@ -1140,6 +1269,50 @@ class Line:
             return Point(x1 + t1 * m1, y1 + t1 * n1, z1 + t1 * p1)
         else:
             return None
+
+    #-----------------------------------------------------------------------------------------------
+
+    def intersection_with_segment(self, s):
+        """
+        Find intersection of line and segment.
+
+        Parameters
+        ----------
+        s : Segment
+            Segment.
+
+        Returns
+        -------
+        None
+            If there is no intersection.
+        Point
+            If there is single point.
+        Segment
+            If segment lies in the line.
+        """
+
+        # Construct line from segment.
+        line = Line.from_segment(s)
+
+        # Find intersection of two lines.
+        r = self.intersection_with_line(line)
+
+        if r is None:
+            # No intersection of two lines.
+            return None
+        elif isinstance(r, Point):
+            p = r
+            if s.is_have_point(p):
+                # Common point is in segment.
+                return p
+            else:
+                # Common point is outside segment.
+                return None
+        elif isinstance(r, Line):
+            # Segment lies in line.
+            return s
+        else:
+            assert False
 
 #===================================================================================================
 
@@ -1763,7 +1936,7 @@ class Triangle:
 
     def intersection_with_segment(self, s):
         """
-        Find intersection with segment.
+        Find intersection of triangle with segment.
 
         Parameters
         ----------
@@ -1780,34 +1953,55 @@ class Triangle:
             If intersection is performed by segment.
         """
 
-        # Take containing objects.
-        psi = self.plane.intersection_with_segment(s)
+        # Find intersection of plane and segment.
+        r = self.plane.intersection_with_segment(s)
 
         # No intersection segment with plane.
-        if psi is None:
+        if r is None:
             return None
 
         # There is intersection of plane and segment.
-        if isinstance(psi, Point):
-
-            # Intersection is point.
-            p = psi
-
-            # Return point only if it lies inside the triangle.
+        if isinstance(r, Point):
+            p = r
             if self.is_have_point(p):
                 return p
             else:
                 return None
 
-        elif isinstance(psi, Segment):
+        assert isinstance(r, Segment)
 
-            # Intersection of plane and segment is segment itself,
-            # because it lies in the plane.
-            # TODO: we can not keep it.
-            assert False
+        # Find intersections of all triangle sides with segment.
+        r1 = self.AB.intersection_with_segment(s)
+        r2 = self.BC.intersection_with_segment(s)
+        r3 = self.AC.intersection_with_segment(s)
 
+        # If one of intersections r1, r2, r3 is segment,
+        # then this segment is result of triangle and segment intersection.
+        if isinstance(r1, Segment):
+            return r1
+        if isinstance(r2, Segment):
+            return r2
+        if isinstance(r3, Segment):
+            return r3
+
+        # Then we have to collect all points.
+        ps = Points()
+        if isinstance(r1, Point):
+            ps.add_unique(r1)
+        if isinstance(r2, Point):
+            ps.add_unique(r2)
+        if isinstance(r3, Point):
+            ps.add_unique(r3)
+
+        # Now result is None, Point or Segment.
+        cnt = ps.count()
+        if cnt == 0:
+            return None
+        elif cnt == 1:
+            return ps[0]
         else:
-            assert False
+            assert cnt == 2
+            return Segment(ps[0], ps[1])
 
     #-----------------------------------------------------------------------------------------------
 
@@ -1910,22 +2104,6 @@ def test():
     # Check lines intersections.
     assert OX.intersection_with_line(OY) == O
     assert OX.intersection_with_line(OZ) == O
-
-    # Check triangles intersection.
-    tri1 = Triangle(Point(Fr(0), Fr(0), Fr(0)),
-                    Point(Fr(0), Fr(2), Fr(0)),
-                    Point(Fr(2), Fr(1), Fr(0)))
-    tri2 = Triangle(Point(Fr(0), Fr(1), Fr(0.1)),
-                    Point(Fr(1), Fr(0), Fr(-0.1)),
-                    Point(Fr(1), Fr(2), Fr(-0.1)))
-    print(tri1.intersection_with_triangle(tri2))
-    tri1 = Triangle(Point(Fr(0), Fr(0), Fr(0)),
-                    Point(Fr(0), Fr(2), Fr(0)),
-                    Point(Fr(2), Fr(1), Fr(0)))
-    tri2 = Triangle(Point(Fr(1), Fr(1), Fr(0)),
-                    Point(Fr(3), Fr(0), Fr(0)),
-                    Point(Fr(3), Fr(2), Fr(0)))
-    print(tri1.intersection_with_triangle(tri2))
 
 #---------------------------------------------------------------------------------------------------
 
