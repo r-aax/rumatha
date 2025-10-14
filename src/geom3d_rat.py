@@ -1353,58 +1353,6 @@ class Plane:
 
         return Vector.dot(self.normal(), pl.normal()) == 0
 
-    #-----------------------------------------------------------------------------------------------
-
-    def is_intersects_with_segment(self, s):
-        """
-        Check if plane intersects with segment.
-
-        Parameters
-        ----------
-        s : Segment
-            Segment.
-
-        Returns
-        -------
-        bool
-            True - if plane intersects segment,
-            False - otherwise.
-        """
-
-        return not self.is_two_points_strong_on_one_side(s.A, s.B)
-
-    #-----------------------------------------------------------------------------------------------
-
-    def intersection_with_segment(self, s):
-        """
-        Find plane and segment intersection.
-
-        Parameters
-        ----------
-        s : Segment
-            Segment.
-
-        Returns
-        -------
-        None
-            If there is no intersection.
-        Point
-            If there is only point of intersection.
-        Segment
-            If segment lay in plane.
-        """
-
-        # Check for no intersection.
-        if not self.is_intersects_with_segment(s):
-            return None
-
-        # Check if both ends of segment lie in plane.
-        if self.is_have_point(s.A) and self.is_have_point(s.B):
-            return s
-
-        # Intersection point is inside of segment.
-        return Intersection.line_plane(s.line, self)
-
 #===================================================================================================
 
 class Triangle:
@@ -1599,7 +1547,7 @@ class Triangle:
         """
 
         # Find intersection of plane and segment.
-        r = self.plane.intersection_with_segment(s)
+        r = Intersection.segment_plane(s, self.plane)
 
         # No intersection segment with plane.
         if r is None:
@@ -2293,7 +2241,16 @@ class Intersection:
             Single point of intersection.
         """
 
-        raise Exception('not implemented')
+        # Check for no intersection.
+        if pl.is_two_points_strong_on_one_side(s.A, s.B):
+            return None
+
+        # Check if both ends of segment lie in plane.
+        if pl.is_have_point(s.A) and pl.is_have_point(s.B):
+            return s
+
+        # Intersection point is inside of segment.
+        return Intersection.line_plane(s.line, pl)
 
     #-----------------------------------------------------------------------------------------------
 
@@ -2615,12 +2572,12 @@ def test():
     assert OYZ.is_perpendicular_with_plane(OXZ)
 
     # Intersect plane with line.
-    assert XYZ.intersection_with_line(OX) == X
-    assert XYZ.intersection_with_line(OY) == Y
-    assert XYZ.intersection_with_line(OZ) == Z
-    assert OXY.intersection_with_line(OX) == OX
-    assert OYZ.intersection_with_line(OY) == OY
-    assert OXZ.intersection_with_line(OZ) == OZ
+    assert Intersection.line_plane(OX, XYZ) == X
+    assert Intersection.line_plane(OY, XYZ) == Y
+    assert Intersection.line_plane(OZ, XYZ) == Z
+    assert Intersection.line_plane(OX, OXY) == OX
+    assert Intersection.line_plane(OY, OYZ) == OY
+    assert Intersection.line_plane(OZ, OXZ) == OZ
 
     # Check equal lines.
     assert OX == Line.from_points(O, Point(Fr(2), Fr(0), Fr(0)))
