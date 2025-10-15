@@ -1525,8 +1525,6 @@ class Segments:
             Get triangles.
         """
 
-        print(self.items)
-
         ts = Triangles()
         n = self.count()
 
@@ -2304,7 +2302,7 @@ class Triangle:
 
         r = Intersection.triangle_triangle(self, t)
 
-        return isinstance(r, Points)
+        return isinstance(r, Segments)
 
     #-----------------------------------------------------------------------------------------------
 
@@ -3250,13 +3248,27 @@ class Intersection:
 
         # Now result is None, Point or Segment.
         cnt = ps.count()
-        if cnt == 0:
-            return None
-        elif cnt == 1:
-            return ps[0]
-        else:
-            assert cnt == 2
+
+        # Both intersection points are on sides.
+        # They form result segment.
+        if cnt == 2:
             return Segment(ps[0], ps[1])
+
+        # Only one intersection point on side.
+        if cnt == 1:
+            if t.is_have_point(s.A) and t.is_have_point(s.B):
+                return s
+            else:
+                return ps[0]
+
+        # No intersection points with triangle sides.
+        assert cnt == 0
+
+        # Result if whole segment or empty.
+        if t.is_have_point(s.A) and t.is_have_point(s.B):
+            return s
+        else:
+            return None
 
     #-----------------------------------------------------------------------------------------------
 
@@ -3554,8 +3566,12 @@ class Intersection:
             return ps[0]
         elif cnt == 2:
             return Segment(ps[0], ps[1])
+        elif cnt == 3:
+            ss = Segments()
+            ss.adds([Segment(ps[0], ps[1]), Segment(ps[1], ps[2]), Segment(ps[0], ps[1])])
+            return ss
         else:
-            return ps
+            raise Exception('Intersection.triangle_triangle NOT IMPLEMENTED')
 
 #===================================================================================================
 
@@ -3621,6 +3637,12 @@ def test():
                   Point(Fr(0), Fr(2), Fr(0)))
     r = Intersection.segment_triangle(s, t)
     assert r == s
+    s = Segment(Point(Fr(0), Fr(1, 2), Fr(0)), Point(Fr(0), Fr(1), Fr(0)))
+    t = Triangle(Point(Fr(-1), Fr(0), Fr(0)),
+                  Point(Fr(1), Fr(0), Fr(0)),
+                  Point(Fr(0), Fr(2), Fr(0)))
+    r = Intersection.segment_triangle(s, t)
+    assert r == s
 
     # Intersection of two triangles.
     t1 = Triangle(Point(Fr(0), Fr(1), Fr(0)),
@@ -3638,7 +3660,8 @@ def test():
                   Point(Fr(1), Fr(0), Fr(0)),
                   Point(Fr(0), Fr(2), Fr(0)))
     r = Intersection.triangle_triangle(t1, t2)
-    print(r)
+    assert isinstance(r, Segments)
+    assert r.count() == 3
 
     # Segment split.
     s = Segment(Point(Fr(0), Fr(0), Fr(0)), Point(Fr(1), Fr(0), Fr(0)))
