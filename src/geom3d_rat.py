@@ -1941,6 +1941,25 @@ class Triangle:
         else:
             assert False
 
+    #-----------------------------------------------------------------------------------------------
+
+    def triangulate(self, pas):
+        """
+        Triangulate by set of points and segments.
+
+        Parameters
+        ----------
+        pas : PointsAndSegments
+            Set of points and segments.
+
+        Returns
+        -------
+        [Triangle]
+            List of triangles.
+        """
+
+        return [self]
+
 #===================================================================================================
 
 class Intersection:
@@ -2984,7 +3003,34 @@ def test():
 
 #---------------------------------------------------------------------------------------------------
 
+def test_triangulation():
+    """
+    Test triangulation.
+    """
+
+    N = 1
+
+    t = Triangle(Point(Fr(1), Fr(0), Fr(0)),
+                 Point(Fr(-1), Fr(0), Fr(0)),
+                 Point(Fr(0), Fr(2), Fr(0)))
+    pas = PointsAndSegments()
+
+    if N == 1:
+        pas.add_unique_segment(Segment(Point(Fr(0), Fr(0), Fr(0)), Point(Fr(0), Fr(1), Fr(0))))
+    else:
+        assert False
+
+    ts = t.triangulate(pas)
+    t.draw(plt, color='gray', linewidth='1', size=10)
+    pas.draw(plt, color='red', linewidth='3', size=50)
+    for ti in ts:
+        ti.draw(plt, color='green', linewidth='2', size=30)
+    plt.show()
+
+#---------------------------------------------------------------------------------------------------
+
 if __name__ == '__main__':
     test()
+    test_triangulation()
 
 #===================================================================================================
