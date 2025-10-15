@@ -1508,10 +1508,19 @@ class Segments:
 
         for i in range(n):
             for j in range(i + 1, n):
-                if self.items[i].is_conflict(self.items[j]):
+                if self[i].is_conflict(self[j]):
                     return True
 
         return False
+
+    #-----------------------------------------------------------------------------------------------
+
+    def fix_conflicts(self):
+        """
+        Fix conflicts.
+        """
+
+        pass
 
     #-----------------------------------------------------------------------------------------------
 
@@ -1800,6 +1809,15 @@ class PointsAndSegments:
         """
 
         return self.is_have_segment_point_conflict() or self.is_have_segment_segment_conflict()
+
+    #-----------------------------------------------------------------------------------------------
+
+    def fix_conflicts(self):
+        """
+        Fix all conflicts.
+        """
+
+        self.segments.fix_conflicts()
 
     #-----------------------------------------------------------------------------------------------
 
@@ -2411,7 +2429,9 @@ class Triangle:
         """
 
         # For triangulation we have to add triangle sides into points and segments set.
+        # After this fix conflicts.
         pas.adds_unique_segments(self.sides)
+        pas.fix_conflicts()
 
         if pas.is_have_conflict():
             raise Exception('Triangle.triangulate: points and segments conflict')
@@ -3692,7 +3712,7 @@ def test_triangulation():
     Test triangulation.
     """
 
-    N = 1
+    N = 5
 
     t = Triangle(Point(Fr(1), Fr(0), Fr(0)),
                  Point(Fr(-1), Fr(0), Fr(0)),
@@ -3700,16 +3720,34 @@ def test_triangulation():
     pas = PointsAndSegments()
 
     if N == 1:
+        # One vertical segment inside.
         pas.add_unique_segment(Segment(Point(Fr(0), Fr(1, 2), Fr(0)),
                                        Point(Fr(0), Fr(1), Fr(0))))
     elif N == 2:
+        # One side segment.
         pas.add_unique_segment(Segment(Point(Fr(-1, 4), Fr(1, 2), Fr(0)),
                                        Point(Fr(1, 4), Fr(1), Fr(0))))
     elif N == 3:
+        # Two not conflicted segments.
         pas.add_unique_segment(Segment(Point(Fr(-1, 2), Fr(1, 10), Fr(0)),
                                        Point(Fr(0), Fr(1), Fr(0))))
         pas.add_unique_segment(Segment(Point(Fr(1, 2), Fr(3, 10), Fr(0)),
                                        Point(Fr(1, 2), Fr(1, 10), Fr(0))))
+    elif N == 4:
+        # Whole triangle inside.
+        pas.add_unique_segment(Segment(Point(Fr(-1, 2), Fr(1, 10), Fr(0)),
+                                       Point(Fr(1, 2), Fr(1, 10), Fr(0))))
+        pas.add_unique_segment(Segment(Point(Fr(-1, 2), Fr(1, 10), Fr(0)),
+                                       Point(Fr(0), Fr(1), Fr(0))))
+        pas.add_unique_segment(Segment(Point(Fr(1, 2), Fr(1, 10), Fr(0)),
+                                       Point(Fr(0), Fr(1), Fr(0))))
+    elif N == 5:
+        # One vertical segment with one end on bottom side of triangle.
+        pas.add_unique_segment(Segment(Point(Fr(0), Fr(0), Fr(0)),
+                                       Point(Fr(0), Fr(1), Fr(0))))
+    elif N == 6:
+        # Cut triangle from one side.
+        pass
     else:
         assert False
 
@@ -3724,6 +3762,6 @@ def test_triangulation():
 
 if __name__ == '__main__':
     test()
-    #test_triangulation()
+    test_triangulation()
 
 #===================================================================================================

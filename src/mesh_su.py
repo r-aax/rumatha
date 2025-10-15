@@ -1530,6 +1530,8 @@ if __name__ == '__main__':
         if not is_tri_intersection:
             mesh_add_triangle(out_mesh, zone, tri)
         else:
+            print(f'Tri: {tri}')
+            print(f'Intersect: {intersect}')
             mesh_add_triangles(out_mesh, zone, tri.triangulate(intersect))
 
     # Save result mesh.
