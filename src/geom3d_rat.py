@@ -1436,6 +1436,30 @@ class Segments:
 
     #-----------------------------------------------------------------------------------------------
 
+    def is_conflict(self, s):
+        """
+        Check if segments conflict with given segment.
+
+        Parameters
+        ----------
+        s : Segment
+            Segment.
+
+        Returns
+        -------
+        bool
+            True - if segments conflict with given segment,
+            False - otherwise.
+        """
+
+        for si in self.items:
+            if si.is_conflict(s):
+                return True
+
+        return False
+
+    #-----------------------------------------------------------------------------------------------
+
     def is_have_conflict(self):
         """
         Check if there is segment-segment conflict.
@@ -1709,6 +1733,81 @@ class PointsAndSegments:
         """
 
         return self.is_have_segment_point_conflict() or self.is_have_segment_segment_conflict()
+
+    #-----------------------------------------------------------------------------------------------
+
+    def points(self):
+        """
+        Get all points.
+        Points and segments ends.
+
+        Returns
+        -------
+        Points
+            Points and segment ends.
+        """
+
+        ps = self.segments.points()
+
+        for p in self.points.items:
+            ps.add_unique(p)
+
+        return ps
+
+    #-----------------------------------------------------------------------------------------------
+
+    def possible_segments(self):
+        """
+        Get all possible segments.
+        Possible segment is constructed from pair of points.
+
+        Returns
+        -------
+        Segments
+            Possibble segments.
+        """
+
+        # Get all points.
+        ps = self.segments.points()
+        n = ps.count()
+        ss = Segments()
+
+        # Construct segments.
+
+        for i in range(n):
+            for j in range(i + 1, n):
+                ss.add(Segment(ps[i], ps[j]))
+
+        return ss
+
+    #-----------------------------------------------------------------------------------------------
+
+    def minimal_segments_coverage(self):
+        """
+        Get minimal segments coverage.
+
+        Returns
+        -------
+        Segments
+            Minimal segments coverage.
+        """
+
+        # Get all possible segments.
+        ps = self.possible_segments()
+
+        # Create new segments container.
+        ms = Segments()
+
+        # First get segments with small length.
+        ps.sort(fun=lambda s: s.mod2())
+
+        # Try to take as many segments as possible.
+        # We do not need add unique segment because there is no conflict.
+        for s in ps.items:
+            if not ms.is_conflict(s):
+                ms.add(s)
+
+        return ms
 
 #===================================================================================================
 
@@ -2213,6 +2312,10 @@ class Triangle:
 
         if pas.is_have_conflict():
             raise Exception('Triangle.triangulate: points and segments conflict')
+
+        # Get minimal segments coverage.
+        msc = pas.minimal_segments_coverage()
+        print(msc)
 
         return [self]
 
