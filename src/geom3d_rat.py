@@ -1201,6 +1201,8 @@ class Segment:
             List of segments.
         """
 
+        ps.sort()
+
         i, n = 0, ps.count()
 
         # Find first point inside segment.
@@ -1209,11 +1211,11 @@ class Segment:
 
         # If all points are not greater than A then terminate.
         if i == n:
-            return []
+            return self
 
         # if first point greater than A also greater than B, then terminate.
         if ps[i] >= self.B:
-            return []
+            return self
 
         # There is points inside segment.
         j = n - 1
@@ -1515,12 +1517,65 @@ class Segments:
 
     #-----------------------------------------------------------------------------------------------
 
+    def split_segment_by_point(self, i, p):
+        """
+        Split segment by point.
+
+        Parameters
+        ----------
+        i : int
+            Segment position.
+        p : Point
+            Point.
+        """
+
+        s = self[i]
+
+        # If point is segment end then nothing to do.
+        if p.is_segment_end(s):
+            return
+
+        # Split segment into two parts.
+        # First part substitutes initial segment, second part goes to the end of segments list.
+        s1, s2 = Segment(s.A, p), Segment(p, s.B)
+        self[i] = s1
+        # Just add it because segment s2 can cause new conflicts.
+        self.add(s2)
+
+    #-----------------------------------------------------------------------------------------------
+
     def fix_conflicts(self):
         """
         Fix conflicts.
         """
 
-        pass
+        # Create segments and points for cutting.
+        ss = [(s, Points()) for s in self.items]
+        self.items = []
+
+        # Check all pairs of segments.
+        n = len(ss)
+        for i in range(n):
+            (s1, int1) = ss[i]
+            for j in range(i + 1, n):
+                (s2, int2) = ss[j]
+                r = Intersection.segment_segment(s1, s2)
+                if isinstance(r, Point):
+                    int1.add_unique(r)
+                    int2.add_unique(r)
+                elif isinstance(r, Segment):
+                    int1.add_unique(r.A)
+                    int1.add_unique(r.B)
+                    int2.add_unique(r.A)
+                    int2.add_unique(r.B)
+
+        # Split all and add back.
+        for (s, int) in ss:
+            parts = s.split(int)
+            if isinstance(parts, Segment):
+                self.add(parts)
+            else:
+                self.adds(parts)
 
     #-----------------------------------------------------------------------------------------------
 
@@ -3687,9 +3742,9 @@ def test():
     s = Segment(Point(Fr(0), Fr(0), Fr(0)), Point(Fr(1), Fr(0), Fr(0)))
     ps = Points()
     ps.add_unique(Point(Fr(-1), Fr(0), Fr(0)))
-    assert s.split(ps) == []
+    assert s.split(ps) == s
     ps.add_unique(Point(Fr(0), Fr(0), Fr(0)))
-    assert s.split(ps) == []
+    assert s.split(ps) == s
     ps.add_unique(Point(Fr(1, 2), Fr(0), Fr(0)))
     r = s.split(ps)
     assert (len(r) == 2)

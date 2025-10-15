@@ -1493,18 +1493,23 @@ def mesh_add_triangles(m, z, ts):
 
 if __name__ == '__main__':
 
+    test_name = 'small_sphere_double'
+    denom = 100
+
     # Load mesh and convert coords to fractions.
     # Extract list of triangles.
-    in_mesh = Mesh('../data/meshes/tetrahedron_2.dat')
-    in_mesh.convert_coordinates_real_to_rat(10)
+    in_mesh = Mesh(f'../data/meshes/{test_name}.dat')
+    in_mesh.convert_coordinates_real_to_rat(denom)
     ts = mesh_triangles_list(in_mesh)
+    n = len(ts)
 
     # Create result mesh.
     out_mesh = Mesh()
     zone = out_mesh.add_zone('SINGLE ZONE')
 
     # Process every triangle.
-    for (tri, intersect) in ts:
+    for i in range(n):
+        (tri, intersect) = ts[i]
 
         # Check if triangle t is intersection triangle.
         is_tri_intersection = False
@@ -1530,12 +1535,15 @@ if __name__ == '__main__':
         if not is_tri_intersection:
             mesh_add_triangle(out_mesh, zone, tri)
         else:
-            print(f'Tri: {tri}')
-            print(f'Intersect: {intersect}')
+            # print(f'Tri: {tri}')
+            # print(f'Intersect: {intersect}')
             mesh_add_triangles(out_mesh, zone, tri.triangulate(intersect))
+
+        # Progress bar.
+        print(f'{i + 1} / {n} completed')
 
     # Save result mesh.
     out_mesh.convert_coordinates_rat_to_real()
-    out_mesh.store('../data/meshes/tetrahedron_2_out.dat')
+    out_mesh.store(f'../data/meshes/{test_name}_out.dat')
 
 # ==================================================================================================
