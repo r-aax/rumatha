@@ -1493,8 +1493,8 @@ def mesh_add_triangles(m, z, ts):
 
 if __name__ == '__main__':
 
-    test_name = 'small_sphere_double'
-    denom = 100
+    test_name = 'tetrahedron_double'
+    denom = 10000 # this value is enough for bunny
 
     # Load mesh and convert coords to fractions.
     # Extract list of triangles.
