@@ -1510,6 +1510,8 @@ if __name__ == '__main__':
     out_mesh = Mesh()
     zone = out_mesh.add_zone('SINGLE ZONE')
 
+    print('Phase 2 : intersections : begin')
+
     # Process every triangles pair.
     for i in range(n):
         (tri, intersect1) = ts[i]
@@ -1535,13 +1537,21 @@ if __name__ == '__main__':
                         intersect2.add_unique_segment(s)
                 else:
                     raise Exception('complex intersection: not implemented')
+        print(f'Phase 2 : {i + 1} / {n}')
+
+    print('Phase 2 : intersections : end')
+    print('Phase 3 : triangulation : begin')
 
     # Triangulate triangles.
-    for (t, intersect) in ts:
+    for i in range(n):
+        (t, intersect) = ts[i]
         if intersect.is_empty():
             mesh_add_triangle(out_mesh, zone, t)
         else:
             mesh_add_triangles(out_mesh, zone, t.triangulate(intersect))
+        print(f'Phase 3 : {i + 1} / {n}')
+
+    print('Phase 3 : triangulation : end')
 
     # Save result mesh.
     print('Phase 4 : postprocess and store : begin')
