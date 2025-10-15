@@ -1236,6 +1236,25 @@ class Segments:
 
     #-----------------------------------------------------------------------------------------------
 
+    def __getitem__(self, i):
+        """
+        Get i-th segment.
+
+        Parameters
+        ----------
+        i : int
+            Index.
+
+        Returns
+        -------
+        Segment
+            Segment on i-th position.
+        """
+
+        return self.items[i]
+
+    #-----------------------------------------------------------------------------------------------
+
     def __repr__(self):
         """
         String representation.
@@ -1479,6 +1498,42 @@ class Segments:
                     return True
 
         return False
+
+    #-----------------------------------------------------------------------------------------------
+
+    def triangles_list(self):
+        """
+        Get triangles list.
+
+        Returns
+        -------
+        [Triangle]
+            Get triangles list.
+        """
+
+        print(self.items)
+
+        ts = []
+        n = self.count()
+
+        # Check all triangles.
+        for i in range(n):
+            s = self[i]
+            for j in range(i + 1, n):
+                q = self[j]
+                if s.is_adjacent(q):
+                    for k in range(j + 1, n):
+                        r = self[k]
+                        if r.is_adjacent(s):
+                            if r.is_adjacent(q):
+                                ps = Points()
+                                for p in [s.A, s.B, q.A, q.B, r.A, r.B]:
+                                    ps.add_unique(p)
+                                if ps.count() == 3:
+                                    t = Triangle(ps[0], ps[1], ps[2])
+                                    ts.append(t)
+
+        return ts
 
 #===================================================================================================
 
@@ -2315,9 +2370,8 @@ class Triangle:
 
         # Get minimal segments coverage.
         msc = pas.minimal_segments_coverage()
-        print(msc)
 
-        return [self]
+        return msc.triangles_list()
 
 #===================================================================================================
 
@@ -3397,14 +3451,24 @@ def test_triangulation():
     pas = PointsAndSegments()
 
     if N == 1:
-        pas.add_unique_segment(Segment(Point(Fr(0), Fr(1, 2), Fr(0)), Point(Fr(0), Fr(1), Fr(0))))
+        pas.add_unique_segment(Segment(Point(Fr(0), Fr(1, 2), Fr(0)),
+                                       Point(Fr(0), Fr(1), Fr(0))))
+    elif N == 2:
+        pas.add_unique_segment(Segment(Point(Fr(-1, 4), Fr(1, 2), Fr(0)),
+                                       Point(Fr(1, 4), Fr(1), Fr(0))))
+    elif N == 3:
+        pas.add_unique_segment(Segment(Point(Fr(-1, 2), Fr(1, 10), Fr(0)),
+                                       Point(Fr(0), Fr(1), Fr(0))))
+        pas.add_unique_segment(Segment(Point(Fr(1, 2), Fr(3, 10), Fr(0)),
+                                       Point(Fr(1, 2), Fr(1, 10), Fr(0))))
     else:
         assert False
 
     ts = t.triangulate(pas)
+    print(ts)
     pas.draw(plt, color='orange', linewidth='5', size=60)
     for ti in ts:
-        ti.draw(plt, color='black', linewidth='1', size=20)
+        ti.draw(plt, color='black', linewidth='1', size=0)
     plt.show()
 
 #---------------------------------------------------------------------------------------------------
