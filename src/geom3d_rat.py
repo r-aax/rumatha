@@ -337,6 +337,26 @@ class Point:
 
     #-----------------------------------------------------------------------------------------------
 
+    def is_triangle_vertex(self, t):
+        """
+        Check it point is triangle vertex.
+
+        Parameters
+        ----------
+        t : Triangle
+            Triangle.
+
+        Returns
+        -------
+        bool
+            True - if point is triangle vertex,
+            False - otherwise.
+        """
+
+        return (self == t.A) or (self == t.B) or (self == t.C)
+
+    #-----------------------------------------------------------------------------------------------
+
     def is_incident(self, obj):
         """
         Check if point is incident to obj (segment or triangle).
@@ -357,7 +377,7 @@ class Point:
             return self.is_segment_end(obj)
         else:
             assert isinstance(obj, Triangle)
-            return (self == obj.A) or (self == obj.B) or (self == obj.C)
+            return self.is_triangle_vertex(obj)
 
     #-----------------------------------------------------------------------------------------------
 
@@ -1009,6 +1029,26 @@ class Segment:
 
     #-----------------------------------------------------------------------------------------------
 
+    def is_triangle_side(self, t):
+        """
+        Check if segment is triangle side.
+
+        Parameters
+        ----------
+        t : Triangle
+            Triangle.
+
+        Returns
+        -------
+        bool
+            True - if segment is triangle side,
+            False - otherwise.
+        """
+
+        return (self == t.AB) or (self == t.BC) or (self == t.AC)
+
+    #-----------------------------------------------------------------------------------------------
+
     def is_incident(self, obj):
         """
         Check if segment is incident to object (point or triangle).
@@ -1026,10 +1066,10 @@ class Segment:
         """
 
         if isinstance(obj, Point):
-            return (self.A == obj) or (self.B == obj)
+            return obj.is_segment_end(self)
         else:
             assert isinstance(obj, Triangle)
-            return (self == obj.AB) or (self == obj.BC) or (self == obj.AC)
+            return self.is_triangle_side(obj)
 
     #-----------------------------------------------------------------------------------------------
 
@@ -1076,6 +1116,20 @@ class Segments:
         """
 
         self.items = []
+
+    #-----------------------------------------------------------------------------------------------
+
+    def __repr__(self):
+        """
+        String representation.
+
+        Returns
+        -------
+        str
+            String representation.
+        """
+
+        return f'Segments[{self.items}]'
 
     #-----------------------------------------------------------------------------------------------
 
@@ -1787,10 +1841,10 @@ class Triangle:
         """
 
         if isinstance(obj, Point):
-            return (self.A == obj) or (self.B == obj) or (self.C == obj)
+            return obj.is_triangle_vertex(self)
         else:
             assert isinstance(obj, Segment)
-            return (self.AB == obj) or (self.BC == obj) or (self.AC == obj)
+            return obj.is_triangle_side(self)
 
     #-----------------------------------------------------------------------------------------------
 
@@ -2858,10 +2912,8 @@ class Intersection:
             return ps[0]
         elif cnt == 2:
             return Segment(ps[0], ps[1])
-        elif cnt == 3:
-            return Triangle(ps[0], ps[1], ps[2])
         else:
-            return ps
+            raise Exception('Intersection.triangle_triangle: not implemented')
 
 #===================================================================================================
 
@@ -2919,6 +2971,16 @@ def test():
     # Check lines intersections.
     assert Intersection.line_line(OX, OY) == O
     assert Intersection.line_line(OX, OZ) == O
+
+    # Intersection of two triangles.
+    t1 = Triangle(Point(Fr(0), Fr(1), Fr(0)),
+                  Point(Fr(1), Fr(-1), Fr(0)),
+                  Point(Fr(0), Fr(-1), Fr(1)))
+    t2 = Triangle(Point(Fr(0), Fr(0), Fr(1, 10)),
+                  Point(Fr(1), Fr(2), Fr(1, 10)),
+                  Point(Fr(0), Fr(2), Fr(11, 10)))
+    r = Intersection.triangle_triangle(t1, t2)
+    assert r == Segment(Point(Fr(0), Fr(2, 5), Fr(3, 10)), Point(Fr(1, 5), Fr(2, 5), Fr(1, 10)))
 
 #---------------------------------------------------------------------------------------------------
 

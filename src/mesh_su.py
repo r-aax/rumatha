@@ -1504,7 +1504,7 @@ if __name__ == '__main__':
     zone = out_mesh.add_zone('SINGLE ZONE')
 
     # Process every triangle.
-    for (tri, _) in ts:
+    for (tri, intersect) in ts:
 
         # Check if triangle t is intersection triangle.
         is_tri_intersection = False
@@ -1513,16 +1513,26 @@ if __name__ == '__main__':
                 r = geom3d_rat.Intersection.triangle_triangle(tri, t)
                 if r is None:
                     pass
-                elif isinstance(r, geom3d_rat.Point) or isinstance(r, geom3d_rat.Segment):
-                    if not tri.is_incident(r):
+                elif isinstance(r, geom3d_rat.Point):
+                    p = r
+                    if not p.is_triangle_vertex(tri):
                         is_tri_intersection = True
-                        break
+                        intersect.add_unique_point(p)
+                elif isinstance(r, geom3d_rat.Segment):
+                    s = r
+                    if not s.is_triangle_side(tri):
+                        is_tri_intersection = True
+                        intersect.add_unique_segment(s)
                 else:
                     raise Exception('complex intersection: not implemented')
 
         # Transfer triangle to mesh without any changes.
         if not is_tri_intersection:
             mesh_add_triangle(out_mesh, zone, tri)
+        else:
+            print(tri)
+            print(intersect)
+            print('----')
 
     # Save result mesh.
     out_mesh.convert_coordinates_rat_to_real()

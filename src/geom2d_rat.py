@@ -954,6 +954,29 @@ class Line:
 
     #-----------------------------------------------------------------------------------------------
 
+    def is_two_points_strong_on_different_sides(self, p1, p2):
+        """
+        Check if two points strong on different sides.
+        These points don't lie of the line.
+
+        Parameters
+        ----------
+        p1 : Point
+            First point.
+        p2 : Point
+            Second point.
+
+        Returns
+        -------
+        bool
+            True - if two points lie on different sides,
+            False - otherwise.
+        """
+
+        return self.val(p1) * self.val(p2) < 0
+
+    #-----------------------------------------------------------------------------------------------
+
     def is_intersects_with_segment(self, s):
         """
         Check if line intersects with segment.
@@ -1139,19 +1162,16 @@ class Triangle:
             False - otherwise.
         """
 
-        if (p == self.A) or (p == self.B) or (p == self.C):
-            return True
-
         # Points A and p must be on one side from BC line.
-        if not self.BCline.is_two_points_strong_on_one_side(self.A, p):
+        if self.BCline.is_two_points_strong_on_different_sides(self.A, p):
             return False
 
         # Points B and p must be on one side from AC line.
-        if not self.ACline.is_two_points_strong_on_one_side(self.B, p):
+        if self.ACline.is_two_points_strong_on_different_sides(self.B, p):
             return False
 
         # Points C and p must be on one side from AB line.
-        if not self.ABline.is_two_points_strong_on_one_side(self.C, p):
+        if self.ABline.is_two_points_strong_on_different_sides(self.C, p):
             return False
 
         return True
