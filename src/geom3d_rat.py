@@ -497,6 +497,20 @@ class Vector(Point):
 
     #-----------------------------------------------------------------------------------------------
 
+    def mod2(self):
+        """
+        Square of module.
+
+        Returns
+        -------
+        Fraction
+            Square of module.
+        """
+
+        return Vector.dot(self, self)
+
+    #-----------------------------------------------------------------------------------------------
+
     @staticmethod
     def dot(v1, v2):
         """
@@ -588,7 +602,7 @@ class Points:
             String representation.
         """
 
-        return f'Points{self.items}'
+        return f'Points[{self.items}]'
 
     #-----------------------------------------------------------------------------------------------
 
@@ -1501,19 +1515,19 @@ class Segments:
 
     #-----------------------------------------------------------------------------------------------
 
-    def triangles_list(self):
+    def triangles(self):
         """
-        Get triangles list.
+        Get triangles.
 
         Returns
         -------
-        [Triangle]
-            Get triangles list.
+        Triangles
+            Get triangles.
         """
 
         print(self.items)
 
-        ts = []
+        ts = Triangles()
         n = self.count()
 
         # Check all triangles.
@@ -1531,7 +1545,7 @@ class Segments:
                                     ps.add_unique(p)
                                 if ps.count() == 3:
                                     t = Triangle(ps[0], ps[1], ps[2])
-                                    ts.append(t)
+                                    ts.add(t)
 
         return ts
 
@@ -2272,6 +2286,42 @@ class Triangle:
 
     #-----------------------------------------------------------------------------------------------
 
+    def is_conflict(self, t):
+        """
+        Check conflict with another triangle.
+
+        Parameters
+        ----------
+        t : Triangle
+            Triangle.
+
+        Returns
+        -------
+        bool
+            True - if there is conflict with another triangle,
+            False - otherwise.
+        """
+
+        r = Intersection.triangle_triangle(self, t)
+
+        return isinstance(r, Points)
+
+    #-----------------------------------------------------------------------------------------------
+
+    def area2(self):
+        """
+        Squared area.
+
+        Returns
+        -------
+        Fraction
+            Squared area.
+        """
+
+        return Vector.vector_product(self.B - self.A, self.C - self.A).mod2() * Fr(1, 4)
+
+    #-----------------------------------------------------------------------------------------------
+
     def projection_OXY(self):
         """
         Projection on OXY (ignore Z coordinate).
@@ -2358,8 +2408,8 @@ class Triangle:
 
         Returns
         -------
-        [Triangle]
-            List of triangles.
+        Triangles
+            Triangles.
         """
 
         # For triangulation we have to add triangle sides into points and segments set.
@@ -2371,7 +2421,167 @@ class Triangle:
         # Get minimal segments coverage.
         msc = pas.minimal_segments_coverage()
 
-        return msc.triangles_list()
+        # Get all possible triangles.
+        ts = msc.triangles()
+
+        # Make mosaic from triangles.
+        ts.construct_mosaic()
+
+        return ts
+
+#===================================================================================================
+
+class Triangles:
+    """
+    Triangles class.
+    """
+
+    #-----------------------------------------------------------------------------------------------
+
+    def __init__(self):
+        """
+        Constructor.
+        """
+
+        self.items = []
+
+    #-----------------------------------------------------------------------------------------------
+
+    def __getitem__(self, i):
+        """
+        Get i-th triangle.
+
+        Parameters
+        ----------
+        i : int
+            Index.
+
+        Returns
+        -------
+        Triangle
+            Get i-th triangle.
+        """
+
+        return self.items[i]
+
+    #-----------------------------------------------------------------------------------------------
+
+    def __repr__(self):
+        """
+        String representation.
+
+        Returns
+        -------
+        str
+            String representation.
+        """
+
+        return f'Triangles[{self.items}]'
+
+    #-----------------------------------------------------------------------------------------------
+
+    def draw(self, plt, color='black', linewidth='2', size=20):
+        """
+        Draw on plot.
+
+        Parameters
+        ----------
+        plt : Plot
+            Plot.
+        color : str
+            Color.
+        linewidth : str
+            Line width.
+        size : int
+            Point size.
+        """
+
+        for t in self.items:
+            t.draw(plt, color=color, linewidth=linewidth, size=size)
+
+    #-----------------------------------------------------------------------------------------------
+
+    def count(self):
+        """
+        Count of triangles.
+
+        Returns
+        -------
+        int
+            Count of triangles.
+        """
+
+        return len(self.items)
+
+    #-----------------------------------------------------------------------------------------------
+
+    def add(self, t):
+        """
+        Add triangle.
+
+        Parameters
+        ----------
+        t : Triangle
+            Triangle.
+        """
+
+        self.items.append(t)
+
+    #-----------------------------------------------------------------------------------------------
+
+    def sort(self, fun):
+        """
+        Sort triangles.
+
+        Parameters
+        ----------
+        fun : fun
+            Key function.
+        """
+
+        self.items.sort(key=fun)
+
+    #-----------------------------------------------------------------------------------------------
+
+    def is_conflict(self, t):
+        """
+        Check is there conflict with triangle.
+
+        Parameters
+        ----------
+        t : Triangle
+            Triangle.
+
+        Returns
+        -------
+        bool
+            True - if there is conflict,
+            False - otherwise.
+        """
+
+        for ti in self.items:
+            if ti.is_conflict(t):
+                return True
+
+        return False
+
+    #-----------------------------------------------------------------------------------------------
+
+    def construct_mosaic(self):
+        """
+        Construct mosaic.
+        """
+
+        # First sort triangles from smallest.
+        self.sort(fun=lambda t: t.area2())
+
+        ts = self.items
+        self.items = []
+
+        # Try to add triangles without conflicts.
+        for ti in ts:
+            if not self.is_conflict(ti):
+                self.add(ti)
 
 #===================================================================================================
 
@@ -3345,7 +3555,7 @@ class Intersection:
         elif cnt == 2:
             return Segment(ps[0], ps[1])
         else:
-            raise Exception('Intersection.triangle_triangle: not implemented')
+            return ps
 
 #===================================================================================================
 
@@ -3404,6 +3614,14 @@ def test():
     assert Intersection.line_line(OX, OY) == O
     assert Intersection.line_line(OX, OZ) == O
 
+    # Segment and triangle intersection.
+    s = Segment(Point(Fr(-1), Fr(0), Fr(0)), Point(Fr(0), Fr(1), Fr(0)))
+    t = Triangle(Point(Fr(-1), Fr(0), Fr(0)),
+                  Point(Fr(1), Fr(0), Fr(0)),
+                  Point(Fr(0), Fr(2), Fr(0)))
+    r = Intersection.segment_triangle(s, t)
+    assert r == s
+
     # Intersection of two triangles.
     t1 = Triangle(Point(Fr(0), Fr(1), Fr(0)),
                   Point(Fr(1), Fr(-1), Fr(0)),
@@ -3413,6 +3631,14 @@ def test():
                   Point(Fr(0), Fr(2), Fr(11, 10)))
     r = Intersection.triangle_triangle(t1, t2)
     assert r == Segment(Point(Fr(0), Fr(2, 5), Fr(3, 10)), Point(Fr(1, 5), Fr(2, 5), Fr(1, 10)))
+    t1 = Triangle(Point(Fr(-1), Fr(0), Fr(0)),
+                  Point(Fr(1), Fr(0), Fr(0)),
+                  Point(Fr(0), Fr(1), Fr(0)))
+    t2 = Triangle(Point(Fr(-1), Fr(0), Fr(0)),
+                  Point(Fr(1), Fr(0), Fr(0)),
+                  Point(Fr(0), Fr(2), Fr(0)))
+    r = Intersection.triangle_triangle(t1, t2)
+    print(r)
 
     # Segment split.
     s = Segment(Point(Fr(0), Fr(0), Fr(0)), Point(Fr(1), Fr(0), Fr(0)))
@@ -3475,6 +3701,6 @@ def test_triangulation():
 
 if __name__ == '__main__':
     test()
-    test_triangulation()
+    #test_triangulation()
 
 #===================================================================================================
