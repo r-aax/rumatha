@@ -1101,6 +1101,54 @@ class Segment:
         if self.A > self.B:
             self.A, self.B = self.B, self.A
 
+    #-----------------------------------------------------------------------------------------------
+
+    def split(self, ps):
+        """
+        Split segment into list of segments.
+
+        Parameters
+        ----------
+        ps : Points
+            Points.
+
+        Returns
+        -------
+        [Segment]
+            List of segments.
+        """
+
+        i, n = 0, ps.count()
+
+        # Find first point inside segment.
+        while (i < n) and (ps[i] <= self.A):
+            i = i + 1
+
+        # If all points are not greater than A then terminate.
+        if i == n:
+            return []
+
+        # if first point greater than A also greater than B, then terminate.
+        if ps[i] >= self.B:
+            return []
+
+        # There is points inside segment.
+        j = n - 1
+        while ps[j] >= self.B:
+            j = j - 1
+
+        # Separate points are ps[i] < .. < ps[j].
+        ss = []
+        prev = self.A
+        while i <= j:
+            ss.append(Segment(prev, ps[i]))
+            if i == j:
+                ss.append(Segment(ps[i], self.B))
+                break
+            prev = ps[i]
+            i = i + 1
+        return ss
+
 #===================================================================================================
 
 class Segments:
@@ -1252,6 +1300,36 @@ class Segments:
         self.add(s)
 
         return True
+
+    #-----------------------------------------------------------------------------------------------
+
+    def adds(self, ss):
+        """
+        Add list of segments.
+
+        Parameters
+        ----------
+        ss : [Segment]
+            List of segments.
+        """
+
+        for s in ss:
+            self.add(s)
+
+    #-----------------------------------------------------------------------------------------------
+
+    def adds_unique(self, ss):
+        """
+        Add list of segments as unique segments.
+
+        Parameters
+        ----------
+        ss : [Segment]
+            List of segments.
+        """
+
+        for s in ss:
+            self.add_unique(s)
 
     #-----------------------------------------------------------------------------------------------
 
@@ -3000,6 +3078,28 @@ def test():
                   Point(Fr(0), Fr(2), Fr(11, 10)))
     r = Intersection.triangle_triangle(t1, t2)
     assert r == Segment(Point(Fr(0), Fr(2, 5), Fr(3, 10)), Point(Fr(1, 5), Fr(2, 5), Fr(1, 10)))
+
+    # Segment split.
+    s = Segment(Point(Fr(0), Fr(0), Fr(0)), Point(Fr(1), Fr(0), Fr(0)))
+    ps = Points()
+    ps.add_unique(Point(Fr(-1), Fr(0), Fr(0)))
+    assert s.split(ps) == []
+    ps.add_unique(Point(Fr(0), Fr(0), Fr(0)))
+    assert s.split(ps) == []
+    ps.add_unique(Point(Fr(1, 2), Fr(0), Fr(0)))
+    r = s.split(ps)
+    assert (len(r) == 2)
+    assert r[0] == Segment(Point(Fr(0), Fr(0), Fr(0)), Point(Fr(1, 2), Fr(0), Fr(0)))
+    assert r[1] == Segment(Point(Fr(1, 2), Fr(0), Fr(0)), Point(Fr(1), Fr(0), Fr(0)))
+    ps.add_unique(Point(Fr(3, 4), Fr(0), Fr(0)))
+    r = s.split(ps)
+    assert (len(r) == 3)
+    assert r[0] == Segment(Point(Fr(0), Fr(0), Fr(0)), Point(Fr(1, 2), Fr(0), Fr(0)))
+    assert r[1] == Segment(Point(Fr(1, 2), Fr(0), Fr(0)), Point(Fr(3, 4), Fr(0), Fr(0)))
+    assert r[2] == Segment(Point(Fr(3, 4), Fr(0), Fr(0)), Point(Fr(1), Fr(0), Fr(0)))
+    ps.add_unique(Point(Fr(2), Fr(0), Fr(0)))
+    r = s.split(ps)
+    assert (len(r) == 3)
 
 #---------------------------------------------------------------------------------------------------
 
