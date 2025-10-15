@@ -1493,27 +1493,30 @@ def mesh_add_triangles(m, z, ts):
 
 if __name__ == '__main__':
 
-    test_name = 'tetrahedron_double'
+    test_name = 'small_sphere_double'
     denom = 10000 # this value is enough for bunny
 
     # Load mesh and convert coords to fractions.
     # Extract list of triangles.
+    print('Phase 1 : load and prepare : begin')
     in_mesh = Mesh(f'../data/meshes/{test_name}.dat')
     in_mesh.convert_coordinates_real_to_rat(denom)
     ts = mesh_triangles_list(in_mesh)
+    print('Phase 1 : load and prepare : end')
+
     n = len(ts)
 
     # Create result mesh.
     out_mesh = Mesh()
     zone = out_mesh.add_zone('SINGLE ZONE')
 
-    # Process every triangle.
+    # Process every triangles pair.
     for i in range(n):
-        (tri, intersect) = ts[i]
+        (tri, intersect1) = ts[i]
 
         # Check if triangle t is intersection triangle.
-        is_tri_intersection = False
-        for (t, _) in ts:
+        for j in range(i + 1, n):
+            (t, intersect2) = ts[j]
             if t != tri:
                 r = geom3d_rat.Intersection.triangle_triangle(tri, t)
                 if r is None:
@@ -1522,28 +1525,28 @@ if __name__ == '__main__':
                     p = r
                     if not p.is_triangle_vertex(tri):
                         is_tri_intersection = True
-                        intersect.add_unique_point(p)
+                        intersect1.add_unique_point(p)
+                        intersect2.add_unique_point(p)
                 elif isinstance(r, geom3d_rat.Segment):
                     s = r
                     if not s.is_triangle_side(tri):
                         is_tri_intersection = True
-                        intersect.add_unique_segment(s)
+                        intersect1.add_unique_segment(s)
+                        intersect2.add_unique_segment(s)
                 else:
                     raise Exception('complex intersection: not implemented')
 
-        # Transfer triangle to mesh without any changes.
-        if not is_tri_intersection:
-            mesh_add_triangle(out_mesh, zone, tri)
+    # Triangulate triangles.
+    for (t, intersect) in ts:
+        if intersect.is_empty():
+            mesh_add_triangle(out_mesh, zone, t)
         else:
-            # print(f'Tri: {tri}')
-            # print(f'Intersect: {intersect}')
-            mesh_add_triangles(out_mesh, zone, tri.triangulate(intersect))
-
-        # Progress bar.
-        print(f'{i + 1} / {n} completed')
+            mesh_add_triangles(out_mesh, zone, t.triangulate(intersect))
 
     # Save result mesh.
+    print('Phase 4 : postprocess and store : begin')
     out_mesh.convert_coordinates_rat_to_real()
     out_mesh.store(f'../data/meshes/{test_name}_out.dat')
+    print('Phase 4 : postprocess and store : end')
 
 # ==================================================================================================

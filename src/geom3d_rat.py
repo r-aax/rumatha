@@ -1693,6 +1693,21 @@ class PointsAndSegments:
 
     #-----------------------------------------------------------------------------------------------
 
+    def is_empty(self):
+        """
+        Check if points and segments empty.
+
+        Returns
+        -------
+        bool
+            True - if set is empty,
+            False - otherwise.
+        """
+
+        return (self.points_count() == 0) and (self.segments_count() == 0)
+
+    #-----------------------------------------------------------------------------------------------
+
     def add_point(self, p):
         """
         Add point.
