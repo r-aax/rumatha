@@ -1093,6 +1093,75 @@ class Segment:
 
     #-----------------------------------------------------------------------------------------------
 
+    def is_adjacent(self, s):
+        """
+        Check for adjacency with another segment.
+
+        Parameters
+        ----------
+        s : Segment
+            Segment.
+
+        Returns
+        -------
+        bool
+            True - if adjacent with another segment,
+            False - otherwise.
+        """
+
+        # Same segments are not adjacent.
+        if self == s:
+            return False
+
+        # Find intersection.
+        r = Intersection.segment_segment(self, s)
+
+        # Segments are adjacent if and only if they have one point of intersection
+        # and this point is end of both segments.
+        return isinstance(r, Point) and r.is_segment_end(self) and r.is_segment_end(s)
+
+    #-----------------------------------------------------------------------------------------------
+
+    def is_conflict(self, s):
+        """
+        Check if segment conflicts with another segment.
+        Segments are called conflicted if they have common point
+        which is inner point of one or both segments.
+
+        Parameters
+        ----------
+        s : Segment
+            Segment.
+
+        Returns
+        -------
+        bool
+            True - if segment conflicts with another segment,
+            False - otherwise.
+        """
+
+        # Equal segments conflict.
+        if self == s:
+            return True
+
+        # Find intersection.
+        r = Intersection.segment_segment(self, s)
+
+        # No intersection - no conflict.
+        if r is None:
+            return False
+
+        # Intersection by segment.
+        if isinstance(r, Segment):
+            return True
+
+        # Intersection is point.
+        assert isinstance(r, Point)
+
+        return (not r.is_segment_end(self)) or (not r.is_segment_end(s))
+
+    #-----------------------------------------------------------------------------------------------
+
     def sort_points(self):
         """
         Sort points.
@@ -1365,6 +1434,28 @@ class Segments:
 
         self.items.sort(key=fun)
 
+    #-----------------------------------------------------------------------------------------------
+
+    def is_have_conflict(self):
+        """
+        Check if there is segment-segment conflict.
+
+        Returns
+        -------
+        bool
+            True - if there is segment-segment conflict,
+            False - otherwise.
+        """
+
+        n = self.count()
+
+        for i in range(n):
+            for j in range(i + 1, n):
+                if self.items[i].is_conflict(self.items[j]):
+                    return True
+
+        return False
+
 #===================================================================================================
 
 class PointsAndSegments:
@@ -1537,6 +1628,87 @@ class PointsAndSegments:
         self.segments.add(s)
 
         return True
+
+    #-----------------------------------------------------------------------------------------------
+
+    def adds_segments(self, ss):
+        """
+        Add segments.
+
+        Parameters
+        ----------
+        ss : [Segment]
+            Segments.
+        """
+
+        for s in ss:
+            self.add(s)
+
+    #-----------------------------------------------------------------------------------------------
+
+    def adds_unique_segments(self, ss):
+        """
+        Add unique segments.
+
+        Parameters
+        ----------
+        ss : [Segment]
+            Segments.
+        """
+
+        for s in ss:
+            self.add_unique_segment(s)
+
+    #-----------------------------------------------------------------------------------------------
+
+    def is_have_segment_point_conflict(self):
+        """
+        Check if there is segment-point conflict.
+        Segment-point conflict is equal segment has point.
+
+        Returns
+        -------
+        bool
+            True - if there is segment-point conflict,
+            False - otherwise.
+        """
+
+        for si in self.segments.items:
+            for pi in self.points.items:
+                if si.is_have_point(pi):
+                    return True
+
+        return False
+
+    #-----------------------------------------------------------------------------------------------
+
+    def is_have_segment_segment_conflict(self):
+        """
+        Check if there is segment-segment conflict.
+
+        Returns
+        -------
+        bool
+            True - if there is segment-segment conflict,
+            False - otherwise.
+        """
+
+        return self.segments.is_have_conflict()
+
+    #-----------------------------------------------------------------------------------------------
+
+    def is_have_conflict(self):
+        """
+        Check if there is conflict.
+
+        Returns
+        -------
+        bool
+            True - if there is conflict,
+            False - otherwise.
+        """
+
+        return self.is_have_segment_point_conflict() or self.is_have_segment_segment_conflict()
 
 #===================================================================================================
 
@@ -2035,6 +2207,12 @@ class Triangle:
         [Triangle]
             List of triangles.
         """
+
+        # For triangulation we have to add triangle sides into points and segments set.
+        pas.adds_unique_segments(self.sides)
+
+        if pas.is_have_conflict():
+            raise Exception('Triangle.triangulate: points and segments conflict')
 
         return [self]
 
@@ -3116,15 +3294,14 @@ def test_triangulation():
     pas = PointsAndSegments()
 
     if N == 1:
-        pas.add_unique_segment(Segment(Point(Fr(0), Fr(0), Fr(0)), Point(Fr(0), Fr(1), Fr(0))))
+        pas.add_unique_segment(Segment(Point(Fr(0), Fr(1, 2), Fr(0)), Point(Fr(0), Fr(1), Fr(0))))
     else:
         assert False
 
     ts = t.triangulate(pas)
-    t.draw(plt, color='gray', linewidth='1', size=10)
-    pas.draw(plt, color='red', linewidth='3', size=50)
+    pas.draw(plt, color='orange', linewidth='5', size=60)
     for ti in ts:
-        ti.draw(plt, color='green', linewidth='2', size=30)
+        ti.draw(plt, color='black', linewidth='1', size=20)
     plt.show()
 
 #---------------------------------------------------------------------------------------------------
