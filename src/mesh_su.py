@@ -854,6 +854,42 @@ class Mesh:
 
     #-----------------------------------------------------------------------------------------------
 
+    def add_triangle(self, z, t):
+        """
+        Add triangle to zone.
+
+        Parameters
+        ----------
+        z : Zone
+            Zone.
+        t : Triangle
+            Triangle.
+        """
+
+        a = self.add_node(t.A, z, True)
+        b = self.add_node(t.B, z, True)
+        c = self.add_node(t.C, z, True)
+        self.add_face(a, b, c, z)
+
+    #-----------------------------------------------------------------------------------------------
+
+    def add_triangles(self, z, ts):
+        """
+        Add triangles to zone.
+
+        Parameters
+        ----------
+        z : Zone
+            Zone.
+        ts : Triangles
+            Triangles.
+        """
+
+        for t in ts:
+            self.add_triangle(z, t)
+
+    #-----------------------------------------------------------------------------------------------
+
     def link(self, obj1, obj2):
         """
         Link two objects.
@@ -1451,46 +1487,6 @@ def mesh_triangles_list(m):
 
 #---------------------------------------------------------------------------------------------------
 
-def mesh_add_triangle(m, z, t):
-    """
-    Add triangle to mesh.
-
-    Parameters
-    ----------
-    m : Mesh
-        Mesh.
-    z : Zone
-        Zone.
-    t : geom3d_rat.Triangle
-        Triangle to add.
-    """
-
-    a = m.add_node(t.A, z, True)
-    b = m.add_node(t.B, z, True)
-    c = m.add_node(t.C, z, True)
-    m.add_face(a, b, c, z)
-
-#---------------------------------------------------------------------------------------------------
-
-def mesh_add_triangles(m, z, ts):
-    """
-    Add triangle to mesh.
-
-    Parameters
-    ----------
-    m : Mesh
-        Mesh.
-    z : Zone
-        Zone.
-    ts : [geom3d_rat.Triangle]
-        Triangles list.
-    """
-
-    for t in ts:
-        mesh_add_triangle(m, z, t)
-
-#---------------------------------------------------------------------------------------------------
-
 if __name__ == '__main__':
 
     test_name = 'small_sphere_double'
@@ -1546,13 +1542,13 @@ if __name__ == '__main__':
     for i in range(n):
         (t, intersect) = ts[i]
         if intersect.is_empty():
-            mesh_add_triangle(out_mesh, zone, t)
+            out_mesh.add_triangle(zone, t)
         else:
             small_triangles = t.triangulate(intersect)
             for st in small_triangles:
                 if geom3d_rat.Vector.dot(t.outer_normal, st.outer_normal) < 0:
                     st.flip_normal()
-            mesh_add_triangles(out_mesh, zone, small_triangles)
+            out_mesh.add_triangles(zone, small_triangles)
         print(f'Phase 3 : {i + 1} / {n}')
 
     print('Phase 3 : triangulation : end')
