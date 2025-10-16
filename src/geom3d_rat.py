@@ -1994,6 +1994,9 @@ class Plane:
         self.c = c
         self.d = d
 
+        # Construct normal.
+        self.normal = Vector(self.a, self.b, self.c)
+
     #-----------------------------------------------------------------------------------------------
 
     @staticmethod
@@ -2217,20 +2220,6 @@ class Plane:
 
     #-----------------------------------------------------------------------------------------------
 
-    def normal(self):
-        """
-        Get normal vector.
-
-        Returns
-        -------
-        Vector
-            Normal vector.
-        """
-
-        return Vector(self.a, self.b, self.c)
-
-    #-----------------------------------------------------------------------------------------------
-
     def is_perpendicular_with_plane(self, pl):
         """
         Check if plane is perpendicular with plane.
@@ -2247,7 +2236,7 @@ class Plane:
             False - otherwise.
         """
 
-        return Vector.dot(self.normal(), pl.normal()) == 0
+        return Vector.dot(self.normal, pl.normal) == 0
 
 #===================================================================================================
 
