@@ -3,6 +3,7 @@ Mesh - Surface Unstructured.
 """
 
 import numpy as np
+import geom3d
 import geom3d_rat
 from fractions import Fraction as Fr
 
@@ -355,6 +356,20 @@ class Face:
 
     #-----------------------------------------------------------------------------------------------
 
+    def outer_normal(self):
+        """
+        Outer normal.
+
+        Returns
+        -------
+        np.array
+            Outer normal.
+        """
+
+        return np.cross(self.nodes[1].p - self.nodes[0].p, self.nodes[2].p - self.nodes[0].p)
+
+    #-----------------------------------------------------------------------------------------------
+
     def neighbour(self, e):
         """
         Get neighbour by edge.
@@ -399,6 +414,31 @@ class Face:
                     nh.append(f)
 
         return nh
+
+    #-----------------------------------------------------------------------------------------------
+
+    def third_node(self, e):
+        """
+        Get third node, not incident to edge.
+
+        Parameters
+        ----------
+        e : Edge
+            Edge.
+
+        Returns
+        -------
+        Node
+            Third node.
+        """
+
+        a, b = e.nodes[0], e.nodes[1]
+
+        for n in self.nodes:
+            if (n != a) and (n != b):
+                return n
+
+        assert False
 
 #===================================================================================================
 
@@ -1536,7 +1576,8 @@ class Mesh:
                     if not r.is_triangle_side(t2):
                         intsec2.add_unique_segment(r)
                 else:
-                    raise Exception('complex intersection: not implemented')
+                    raise Exception('Mesh.delete_self_intersections_rat : complex intersection, '
+                                    'not implemented')
 
             print(f'DSI.Phase.2 : intsec : {i + 1} / {n}')
 
@@ -1578,6 +1619,39 @@ class Mesh:
         if is_log:
             print('DST.Phase.4 : walkin : begin')
 
+        # Set all global identifiers in -1.
+        for f in m.faces:
+            f.glo_id = -1
+
+        # We start walking through the mesh from some minimal face.
+        f = min(m.faces, key=lambda f: min([n.p[0] for n in f.nodes]))
+
+        # Breadth-first traversal.
+        # Use glo_id as marker.
+        # If glo_id = -1 then face is not processed.
+        stack = [f]
+        next_id = 1
+        while len(stack) > 0:
+            f = stack.pop(0)
+            f.glo_id = next_id
+            next_id = next_id + 1
+            for e in f.edges:
+                if len(e.faces) == 2:
+                    nf = f.neighbour(e)
+                elif len(e.faces) == 4:
+                    mp = 0.5 * (e.nodes[0].p + e.nodes[1].p)
+                    fn = f.outer_normal()
+                    i = np.argmax([fn @ (f.third_node(e).p - mp) for f in e.faces])
+                    nf = e.faces[i]
+                else:
+                    raise Exception('Mesh.delete_self_intersections_rat : edge with incident '
+                                    'faces with number differ from 2 and 4')
+                if nf.glo_id < 0:
+                    stack.append(nf)
+
+        # Delete all faces with glo_ids < 0.
+        m.delete_faces(lambda f: f.glo_id < 0)
+
         if is_log:
             print('DST.Phase.4 : walkin : end')
 
@@ -1586,7 +1660,7 @@ class Mesh:
 #===================================================================================================
 
 if __name__ == '__main__':
-    test_name = 'tetrahedron_double'
+    test_name = 'small_sphere_double'
     in_mesh = Mesh(f'../data/meshes/{test_name}.dat')
     out_mesh = in_mesh.delete_self_intersections_rat(denom=10000, is_log=True) # denom - for bunny
     out_mesh.store(f'../data/meshes/{test_name}_out.dat')

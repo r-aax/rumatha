@@ -3,6 +3,7 @@
 """
 
 import geom1d
+import numpy as np
 
 #===================================================================================================
 
@@ -30,6 +31,94 @@ class Point:
         self.x = x
         self.y = y
         self.z = z
+
+    #-----------------------------------------------------------------------------------------------
+
+    @staticmethod
+    def from_real_array(ar):
+        """
+        Create point from real array.
+
+        Parameters
+        ----------
+        ar : np.array
+            Array of coordinates.
+
+        Returns
+        -------
+        Point
+            Constructed point.
+        """
+
+    #-----------------------------------------------------------------------------------------------
+
+    def __sub__(self, p):
+        """
+        Subtraction of points.
+
+        Parameters
+        ----------
+        p : Point
+            Point.
+
+        Returns
+        -------
+        Vector
+            Result vector.
+        """
+
+        return Vector(self.x - p.x, self.y - p.y, self.z - p.z)
+
+    #-----------------------------------------------------------------------------------------------
+
+    @staticmethod
+    def mid(p1, p2):
+        """
+        Middle point.
+
+        Parameters
+        ----------
+        p1 : Point
+            First point.
+        p2 : Point
+            Second point.
+
+        Returns
+        -------
+        Point
+            Middle point.
+        """
+
+        return Point(0.5 * (p1.x + p2.x), 0.5 * (p1.y + p2.y), 0.5 * (p1.z + p2.z))
+
+#===================================================================================================
+
+class Vector(Point):
+    """
+    Vector.
+    """
+
+    #-----------------------------------------------------------------------------------------------
+
+    @staticmethod
+    def dot(v1, v2):
+        """
+        Dot product.
+
+        Parameters
+        ----------
+        v1 : Vector
+            First vector.
+        v2 : Vector
+            Second vector.
+
+        Returns
+        -------
+        float
+            Result of dor product.
+        """
+
+        return v1.x * v2.x + v1.y * v2.y + v1.z * v2.z
 
 #===================================================================================================
 
