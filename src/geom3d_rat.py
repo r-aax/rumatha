@@ -511,6 +511,17 @@ class Vector(Point):
 
     #-----------------------------------------------------------------------------------------------
 
+    def negate(self):
+        """
+        Negate vector.
+        """
+
+        self.x = -self.x
+        self.y = -self.y
+        self.z = -self.z
+
+    #-----------------------------------------------------------------------------------------------
+
     @staticmethod
     def dot(v1, v2):
         """
@@ -2275,6 +2286,9 @@ class Triangle:
         # Plane.
         self.plane = Plane.from_points(self.A, self.B, self.C)
 
+        # Construct outer normal for triangle.
+        self.outer_normal = Vector.vector_product(self.B - self.A, self.C - self.A)
+
     #-----------------------------------------------------------------------------------------------
 
     def __repr__(self):
@@ -2394,6 +2408,16 @@ class Triangle:
         """
 
         return Vector.vector_product(self.B - self.A, self.C - self.A).mod2() * Fr(1, 4)
+
+    #-----------------------------------------------------------------------------------------------
+
+    def flip_normal(self):
+        """
+        Flip normal.
+        """
+
+        self.B, self.C = self.C, self.B
+        self.outer_normal.negate()
 
     #-----------------------------------------------------------------------------------------------
 

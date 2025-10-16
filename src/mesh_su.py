@@ -1548,7 +1548,11 @@ if __name__ == '__main__':
         if intersect.is_empty():
             mesh_add_triangle(out_mesh, zone, t)
         else:
-            mesh_add_triangles(out_mesh, zone, t.triangulate(intersect))
+            small_triangles = t.triangulate(intersect)
+            for st in small_triangles:
+                if geom3d_rat.Vector.dot(t.outer_normal, st.outer_normal) < 0:
+                    st.flip_normal()
+            mesh_add_triangles(out_mesh, zone, small_triangles)
         print(f'Phase 3 : {i + 1} / {n}')
 
     print('Phase 3 : triangulation : end')
