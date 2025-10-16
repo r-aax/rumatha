@@ -1477,6 +1477,11 @@ class Mesh:
             Denominator for rational coordinates.
         is_log : bool
             Logger flag.
+
+        Returns
+        -------
+        Mesh
+            Result mesh.
         """
 
         #
@@ -1566,12 +1571,22 @@ class Mesh:
         # because self mesh now is not valid and can not be used.
         m.convert_coordinates_rat_to_real()
 
+        #
+        # Fourth phase. Walk outer surface of the mesh.
+        #
+
+        if is_log:
+            print('DST.Phase.4 : walkin : begin')
+
+        if is_log:
+            print('DST.Phase.4 : walkin : end')
+
         return m
 
 #===================================================================================================
 
 if __name__ == '__main__':
-    test_name = 'small_sphere_double'
+    test_name = 'tetrahedron_double'
     in_mesh = Mesh(f'../data/meshes/{test_name}.dat')
     out_mesh = in_mesh.delete_self_intersections_rat(denom=10000, is_log=True) # denom - for bunny
     out_mesh.store(f'../data/meshes/{test_name}_out.dat')
