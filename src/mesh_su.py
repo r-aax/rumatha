@@ -1465,98 +1465,115 @@ class Mesh:
 
         assert all([len(e.faces) == 2 for e in self.edges])
 
-#===================================================================================================
+    #-----------------------------------------------------------------------------------------------
 
-def mesh_triangles_list(m):
-    """
-    Get list of triangles.
+    def delete_self_intersections_rat(self, denom, is_log=False):
+        """
+        Delete self-intersections using rational coordinates.
 
-    Parameters
-    ----------
-    m : Mesh
-        Mesh.
+        Parameters
+        ----------
+        denom : int
+            Denominator for rational coordinates.
+        is_log : bool
+            Logger flag.
+        """
 
-    Returns
-    -------
-    [geom3d_rat.Triangle]
-        List of triangles.
-    """
+        #
+        # First phase. Prepare mesh.
+        #
 
-    return [(geom3d_rat.Triangle(f.nodes[0].p, f.nodes[1].p, f.nodes[2].p),
-             geom3d_rat.PointsAndSegments()) for f in m.faces]
+        if is_log:
+            print('DSI.Phase.1 : prepare : begin')
 
-#---------------------------------------------------------------------------------------------------
+        # Convert coordinates to rational.
+        self.convert_coordinates_real_to_rat(denom)
 
-if __name__ == '__main__':
+        # Create collection of triangles and set of intersection points and segments.
+        tis = [(geom3d_rat.Triangle(f.nodes[0].p, f.nodes[1].p, f.nodes[2].p),
+                geom3d_rat.PointsAndSegments()) for f in self.faces]
+        n = len(tis)
 
-    test_name = 'small_sphere_double'
-    denom = 10000 # this value is enough for bunny
+        # Create result mesh with single zone.
+        m = Mesh()
+        z = m.add_zone('SINGLE ZONE')
 
-    # Load mesh and convert coords to fractions.
-    # Extract list of triangles.
-    print('Phase 1 : load and prepare : begin')
-    in_mesh = Mesh(f'../data/meshes/{test_name}.dat')
-    in_mesh.convert_coordinates_real_to_rat(denom)
-    ts = mesh_triangles_list(in_mesh)
-    print('Phase 1 : load and prepare : end')
+        if is_log:
+            print('DSI.Phase.1 : prepare : end')
 
-    n = len(ts)
+        #
+        # Second phase. Find triangles pairs and find all intersection points and segments.
+        #
 
-    # Create result mesh.
-    out_mesh = Mesh()
-    zone = out_mesh.add_zone('SINGLE ZONE')
+        if is_log:
+            print('DSI.Phase.2 : intsec : begin')
 
-    print('Phase 2 : intersections : begin')
+        # Process every triangles pair.
+        for i in range(n):
+            (t1, intsec1) = tis[i]
+            for j in range(i + 1, n):
+                (t2, intsec2) = tis[j]
 
-    # Process every triangles pair.
-    for i in range(n):
-        (tri, intersect1) = ts[i]
+                # Find intersection.
+                r = geom3d_rat.Intersection.triangle_triangle(t1, t2)
 
-        # Check if triangle t is intersection triangle.
-        for j in range(i + 1, n):
-            (t, intersect2) = ts[j]
-            if t != tri:
-                r = geom3d_rat.Intersection.triangle_triangle(tri, t)
+                # Analyze types of intersection.
                 if r is None:
                     pass
                 elif isinstance(r, geom3d_rat.Point):
-                    p = r
-                    if not p.is_triangle_vertex(tri):
-                        is_tri_intersection = True
-                        intersect1.add_unique_point(p)
-                        intersect2.add_unique_point(p)
+                    if not r.is_triangle_vertex(t1):
+                        intsec1.add_unique_point(r)
+                    if not r.is_triangle_vertex(t2):
+                        intsec2.add_unique_point(r)
                 elif isinstance(r, geom3d_rat.Segment):
-                    s = r
-                    if not s.is_triangle_side(tri):
-                        is_tri_intersection = True
-                        intersect1.add_unique_segment(s)
-                        intersect2.add_unique_segment(s)
+                    if not r.is_triangle_side(t1):
+                        intsec1.add_unique_segment(r)
+                    if not r.is_triangle_side(t2):
+                        intsec2.add_unique_segment(r)
                 else:
                     raise Exception('complex intersection: not implemented')
-        print(f'Phase 2 : {i + 1} / {n}')
 
-    print('Phase 2 : intersections : end')
-    print('Phase 3 : triangulation : begin')
+            print(f'DSI.Phase.2 : intsec : {i + 1} / {n}')
 
-    # Triangulate triangles.
-    for i in range(n):
-        (t, intersect) = ts[i]
-        if intersect.is_empty():
-            out_mesh.add_triangle(zone, t)
-        else:
-            small_triangles = t.triangulate(intersect)
-            for st in small_triangles:
-                if geom3d_rat.Vector.dot(t.outer_normal, st.outer_normal) < 0:
-                    st.flip_normal()
-            out_mesh.add_triangles(zone, small_triangles)
-        print(f'Phase 3 : {i + 1} / {n}')
+        if is_log:
+            print('DSI.Phase.2 : intsec : end')
 
-    print('Phase 3 : triangulation : end')
+        #
+        # Third phase. Triangulation and construct outer mesh.
+        #
 
-    # Save result mesh.
-    print('Phase 4 : postprocess and store : begin')
-    out_mesh.convert_coordinates_rat_to_real()
+        if is_log:
+            print('DSI.Phase.3 : triang : begin')
+
+        # Triangulate triangles.
+        for i in range(n):
+            (t, intsec) = tis[i]
+            if intsec.is_empty():
+                m.add_triangle(z, t)
+            else:
+                small_triangles = t.triangulate(intsec)
+                for st in small_triangles:
+                    if geom3d_rat.Vector.dot(t.outer_normal, st.outer_normal) < 0:
+                        st.flip_normal()
+                m.add_triangles(z, small_triangles)
+            print(f'DSI.Phase.3 : triang : {i + 1} / {n}')
+
+        if is_log:
+            print('DSI.Phase.3 : triang : end')
+
+        # Convert coordinates back to real.
+        # We have to convert coordinates only for result mesh
+        # because self mesh now is not valid and can not be used.
+        m.convert_coordinates_rat_to_real()
+
+        return m
+
+#===================================================================================================
+
+if __name__ == '__main__':
+    test_name = 'small_sphere_double'
+    in_mesh = Mesh(f'../data/meshes/{test_name}.dat')
+    out_mesh = in_mesh.delete_self_intersections_rat(denom=10000, is_log=True) # denom - for bunny
     out_mesh.store(f'../data/meshes/{test_name}_out.dat')
-    print('Phase 4 : postprocess and store : end')
 
 # ==================================================================================================
