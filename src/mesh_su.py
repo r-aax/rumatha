@@ -1638,7 +1638,7 @@ class Mesh:
             for e in f.edges:
                 faces_count = len(e.faces)
                 if faces_count == 1:
-                    pass
+                    nf = None
                 elif faces_count == 2:
                     nf = f.neighbour(e)
                 elif faces_count == 4:
@@ -1649,8 +1649,9 @@ class Mesh:
                 else:
                     raise Exception('Mesh.delete_self_intersections_rat : edge with incident '
                                     'faces with number differ from 2 and 4')
-                if nf.glo_id < 0:
-                    stack.append(nf)
+                if not nf is None:
+                    if nf.glo_id < 0:
+                        stack.append(nf)
 
         # Delete all faces with glo_ids < 0.
         m.delete_faces(lambda f: f.glo_id < 0)
