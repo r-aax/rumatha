@@ -1636,9 +1636,12 @@ class Mesh:
             f.glo_id = next_id
             next_id = next_id + 1
             for e in f.edges:
-                if len(e.faces) == 2:
+                faces_count = len(e.faces)
+                if faces_count == 1:
+                    pass
+                elif faces_count == 2:
                     nf = f.neighbour(e)
-                elif len(e.faces) == 4:
+                elif faces_count == 4:
                     mp = 0.5 * (e.nodes[0].p + e.nodes[1].p)
                     fn = f.outer_normal()
                     i = np.argmax([fn @ (f.third_node(e).p - mp) for f in e.faces])
@@ -1660,9 +1663,9 @@ class Mesh:
 #===================================================================================================
 
 if __name__ == '__main__':
-    test_name = 'small_sphere_double'
+    test_name = 'almost_cube'
     in_mesh = Mesh(f'../data/meshes/{test_name}.dat')
-    out_mesh = in_mesh.delete_self_intersections_rat(denom=10000, is_log=True) # denom - for bunny
+    out_mesh = in_mesh.delete_self_intersections_rat(denom=100000, is_log=True) # denom - for bunny
     out_mesh.store(f'../data/meshes/{test_name}_out.dat')
 
 # ==================================================================================================
