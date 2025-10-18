@@ -3269,7 +3269,7 @@ class Intersection:
         if A == B:
             return A
         else:
-            Segment(A, B)
+            return Segment(A, B)
 
     #-----------------------------------------------------------------------------------------------
 
@@ -3754,6 +3754,14 @@ def test():
     assert Intersection.line_line(OX, OY) == O
     assert Intersection.line_line(OX, OZ) == O
 
+    # Check segments intersections.
+    p1 = Point(Fr(-18789, 1000000), Fr(13811, 1000000), Fr(1, 100))
+    p2 = Point(Fr(-9207, 500000), Fr(1841, 125000), Fr(1, 100))
+    p3 = Point(Fr(-13092327, 705500000), Fr(5071507, 352750000), Fr(1, 100))
+    s1 = Segment(p1, p2)
+    s2 = Segment(p2, p3)
+    assert s1.is_conflict(s2)
+
     # Segment and triangle intersection.
     s = Segment(Point(Fr(-1), Fr(0), Fr(0)), Point(Fr(0), Fr(1), Fr(0)))
     t = Triangle(Point(Fr(-1), Fr(0), Fr(0)),
@@ -3901,7 +3909,7 @@ def test_triangulation(N):
 #---------------------------------------------------------------------------------------------------
 
 if __name__ == '__main__':
-    #test()
+    test()
     test_triangulation(N=7)
 
 #===================================================================================================
