@@ -2497,6 +2497,26 @@ class Triangle:
 
     #-----------------------------------------------------------------------------------------------
 
+    def is_have_point_on_sides(self, p):
+        """
+        Check if triangle has point on one of its sides.
+
+        Parameters
+        ----------
+        p : Point
+            Point.
+
+        Returns
+        -------
+        bool
+            True - if point is on side,
+            False - otherwise.
+        """
+
+        return self.AB.is_have_point(p) or self.BC.is_have_point(p) or self.AC.is_have_point(p)
+
+    #-----------------------------------------------------------------------------------------------
+
     def triangulate(self, pas):
         """
         Triangulate by set of points and segments.
@@ -3791,12 +3811,15 @@ def test():
 
 #---------------------------------------------------------------------------------------------------
 
-def test_triangulation():
+def test_triangulation(N):
     """
     Test triangulation.
-    """
 
-    N = 7
+    Parameters
+    ----------
+    N : int
+        Test number.
+    """
 
     if N == 1:
         # One vertical segment inside.
@@ -3856,12 +3879,15 @@ def test_triangulation():
         # issue #5
         # https://github.com/r-aax/rumatha/issues/5
         # Intersection from cyl_1_right pseudo 3D profile.
-        t = Triangle(Point(Fr(-9381, 50000), Fr(14131, 100000), Fr(0)),
-                     Point(Fr(-18789, 100000), Fr(13811, 100000), Fr(1, 10)),
-                     Point(Fr(-9207, 50000), Fr(1841, 12500), Fr(1, 10)))
+        t = Triangle(Point(Fr(-9381, 500000), Fr(14131, 1000000), Fr(0)),
+                     Point(Fr(-18789, 1000000), Fr(13811, 1000000), Fr(1, 100)),
+                     Point(Fr(-9207, 500000), Fr(1841, 125000), Fr(1, 100)))
         pas = PointsAndSegments()
-        pas.add_unique_segment(Segment(Point(Fr(-84787749, 455350000), Fr(4090753, 28459375), Fr(3707, 91070)),
-                                       Point(Fr(-13092327, 70550000), Fr(5071507, 35275000), Fr(1, 10))))
+        p1 = Point(Fr(-84787749, 4553500000), Fr(4090753, 284593750), Fr(3707, 910700))
+        p2 = Point(Fr(-13092327, 705500000), Fr(5071507, 352750000), Fr(1, 100))
+        assert t.is_have_point_on_sides(p1) and t.is_have_point_on_sides(p2)
+        s = Segment(p1, p2)
+        pas.add_unique_segment(s)
     else:
         assert False
 
@@ -3876,6 +3902,6 @@ def test_triangulation():
 
 if __name__ == '__main__':
     #test()
-    test_triangulation()
+    test_triangulation(N=7)
 
 #===================================================================================================
