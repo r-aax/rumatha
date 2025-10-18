@@ -1643,8 +1643,8 @@ class Mesh:
                     i = np.argmax([fn @ (f.third_node(e).p - mp) for f in e.faces])
                     nf = e.faces[i]
                 else:
-                    raise Exception('Mesh.delete_self_intersections_rat : edge with incident '
-                                    'faces with number differ from 2 and 4')
+                    raise Exception('Mesh.delete_self_intersections_rat : edge with '
+                                    f'unexpected number of incident faces ({faces_count}) is found')
                 if not nf is None:
                     if nf.mark < 0:
                         stack.append(nf)
@@ -1660,7 +1660,7 @@ class Mesh:
 #===================================================================================================
 
 if __name__ == '__main__':
-    test_name = 'cylinder/cyl_1_right'
+    test_name = 'cylinder/cyl_2'
     in_mesh = Mesh(f'../data/meshes/{test_name}.dat')
     out_mesh = in_mesh.delete_self_intersections_rat(denom=1000000, is_log=True) # denom - for bunny
     out_mesh.store(f'../data/meshes/{test_name}_out.dat')
