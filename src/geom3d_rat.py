@@ -250,7 +250,10 @@ class Point:
             String representation.
         """
 
-        return f'P({self.x}, {self.y}, {self.z})'
+        x, y, z = self.x, self.y, self.z
+
+        return f'P({x}={x.numerator/x.denominator}, '\
+               f'{y}={y.numerator/y.denominator}, {z}={z.numerator/z.denominator})'
 
     #-----------------------------------------------------------------------------------------------
 
@@ -882,9 +885,7 @@ class Line:
             String representation.
         """
 
-        return f'Line(x = {self.x0} + t * {self.m}, '\
-               f'y = {self.y0} + t * {self.n}, '\
-               f'z = {self.z0} + t * {self.p})'
+        return f'Line({self.P0} + t * {self.v})'
 
     #-----------------------------------------------------------------------------------------------
 
@@ -3795,29 +3796,40 @@ def test_triangulation():
     Test triangulation.
     """
 
-    N = 5
-
-    t = Triangle(Point(Fr(1), Fr(0), Fr(0)),
-                 Point(Fr(-1), Fr(0), Fr(0)),
-                 Point(Fr(0), Fr(2), Fr(0)))
-    pas = PointsAndSegments()
+    N = 7
 
     if N == 1:
         # One vertical segment inside.
+        t = Triangle(Point(Fr(1), Fr(0), Fr(0)),
+                     Point(Fr(-1), Fr(0), Fr(0)),
+                     Point(Fr(0), Fr(2), Fr(0)))
+        pas = PointsAndSegments()
         pas.add_unique_segment(Segment(Point(Fr(0), Fr(1, 2), Fr(0)),
                                        Point(Fr(0), Fr(1), Fr(0))))
     elif N == 2:
         # One side segment.
+        t = Triangle(Point(Fr(1), Fr(0), Fr(0)),
+                     Point(Fr(-1), Fr(0), Fr(0)),
+                     Point(Fr(0), Fr(2), Fr(0)))
+        pas = PointsAndSegments()
         pas.add_unique_segment(Segment(Point(Fr(-1, 4), Fr(1, 2), Fr(0)),
                                        Point(Fr(1, 4), Fr(1), Fr(0))))
     elif N == 3:
         # Two not conflicted segments.
+        t = Triangle(Point(Fr(1), Fr(0), Fr(0)),
+                     Point(Fr(-1), Fr(0), Fr(0)),
+                     Point(Fr(0), Fr(2), Fr(0)))
+        pas = PointsAndSegments()
         pas.add_unique_segment(Segment(Point(Fr(-1, 2), Fr(1, 10), Fr(0)),
                                        Point(Fr(0), Fr(1), Fr(0))))
         pas.add_unique_segment(Segment(Point(Fr(1, 2), Fr(3, 10), Fr(0)),
                                        Point(Fr(1, 2), Fr(1, 10), Fr(0))))
     elif N == 4:
         # Whole triangle inside.
+        t = Triangle(Point(Fr(1), Fr(0), Fr(0)),
+                     Point(Fr(-1), Fr(0), Fr(0)),
+                     Point(Fr(0), Fr(2), Fr(0)))
+        pas = PointsAndSegments()
         pas.add_unique_segment(Segment(Point(Fr(-1, 2), Fr(1, 10), Fr(0)),
                                        Point(Fr(1, 2), Fr(1, 10), Fr(0))))
         pas.add_unique_segment(Segment(Point(Fr(-1, 2), Fr(1, 10), Fr(0)),
@@ -3826,11 +3838,30 @@ def test_triangulation():
                                        Point(Fr(0), Fr(1), Fr(0))))
     elif N == 5:
         # One vertical segment with one end on bottom side of triangle.
+        t = Triangle(Point(Fr(1), Fr(0), Fr(0)),
+                     Point(Fr(-1), Fr(0), Fr(0)),
+                     Point(Fr(0), Fr(2), Fr(0)))
+        pas = PointsAndSegments()
         pas.add_unique_segment(Segment(Point(Fr(0), Fr(0), Fr(0)),
                                        Point(Fr(0), Fr(1), Fr(0))))
     elif N == 6:
-        # Cut triangle from one side.
-        pass
+        # Segment lies on two sides.
+        t = Triangle(Point(Fr(1), Fr(0), Fr(0)),
+                     Point(Fr(-1), Fr(0), Fr(0)),
+                     Point(Fr(0), Fr(2), Fr(0)))
+        pas = PointsAndSegments()
+        pas.add_unique_segment(Segment(Point(Fr(1, 2), Fr(1), Fr(0)),
+                                       Point(Fr(-1, 2), Fr(1), Fr(0))))
+    elif N == 7:
+        # issue #5
+        # https://github.com/r-aax/rumatha/issues/5
+        # Intersection from cyl_1_right pseudo 3D profile.
+        t = Triangle(Point(Fr(-9381, 50000), Fr(14131, 100000), Fr(0)),
+                     Point(Fr(-18789, 100000), Fr(13811, 100000), Fr(1, 10)),
+                     Point(Fr(-9207, 50000), Fr(1841, 12500), Fr(1, 10)))
+        pas = PointsAndSegments()
+        pas.add_unique_segment(Segment(Point(Fr(-84787749, 455350000), Fr(4090753, 28459375), Fr(3707, 91070)),
+                                       Point(Fr(-13092327, 70550000), Fr(5071507, 35275000), Fr(1, 10))))
     else:
         assert False
 
@@ -3844,7 +3875,7 @@ def test_triangulation():
 #---------------------------------------------------------------------------------------------------
 
 if __name__ == '__main__':
-    test()
+    #test()
     test_triangulation()
 
 #===================================================================================================

@@ -1619,22 +1619,18 @@ class Mesh:
         if is_log:
             print('DST.Phase.4 : walkin : begin')
 
-        # Set all global identifiers in -1.
+        # Set all marks as -1.
         for f in m.faces:
-            f.glo_id = -1
+            f.mark = -1
 
         # We start walking through the mesh from some minimal face.
         f = min(m.faces, key=lambda f: min([n.p[0] for n in f.nodes]))
 
         # Breadth-first traversal.
-        # Use glo_id as marker.
-        # If glo_id = -1 then face is not processed.
         stack = [f]
-        next_id = 1
         while len(stack) > 0:
             f = stack.pop(0)
-            f.glo_id = next_id
-            next_id = next_id + 1
+            f.mark = 1
             for e in f.edges:
                 faces_count = len(e.faces)
                 if faces_count == 1:
@@ -1650,11 +1646,11 @@ class Mesh:
                     raise Exception('Mesh.delete_self_intersections_rat : edge with incident '
                                     'faces with number differ from 2 and 4')
                 if not nf is None:
-                    if nf.glo_id < 0:
+                    if nf.mark < 0:
                         stack.append(nf)
 
         # Delete all faces with glo_ids < 0.
-        m.delete_faces(lambda f: f.glo_id < 0)
+        m.delete_faces(lambda f: f.mark < 0)
 
         if is_log:
             print('DST.Phase.4 : walkin : end')
@@ -1664,9 +1660,9 @@ class Mesh:
 #===================================================================================================
 
 if __name__ == '__main__':
-    test_name = 'almost_cube'
+    test_name = 'cylinder/cyl_1_right'
     in_mesh = Mesh(f'../data/meshes/{test_name}.dat')
-    out_mesh = in_mesh.delete_self_intersections_rat(denom=100000, is_log=True) # denom - for bunny
+    out_mesh = in_mesh.delete_self_intersections_rat(denom=1000000, is_log=True) # denom - for bunny
     out_mesh.store(f'../data/meshes/{test_name}_out.dat')
 
 # ==================================================================================================
