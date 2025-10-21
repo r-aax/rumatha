@@ -434,7 +434,7 @@ class Segment:
         if linewidth != '0':
             plt.plot(x, y, color=color, linewidth=linewidth)
         self.A.draw(plt, color=color, size=size)
-        self.A.draw(plt, color=color, size=size)
+        self.B.draw(plt, color=color, size=size)
 
     #-----------------------------------------------------------------------------------------------
 

@@ -1936,6 +1936,8 @@ class PointsAndSegments:
 
         # Get all points.
         ps = self.segments.points()
+        for p in self.points:
+            ps.add_unique(p)
         n = ps.count()
         ss = Segments()
 
@@ -1964,6 +1966,8 @@ class PointsAndSegments:
 
         # Create new segments container.
         ms = Segments()
+        for s in self.segments:
+            ms.add(s)
 
         # First get segments with small length.
         ps.sort(fun=lambda s: s.mod2())
@@ -3896,20 +3900,85 @@ def test_triangulation(N):
         assert t.is_have_point_on_sides(p1) and t.is_have_point_on_sides(p2)
         s = Segment(p1, p2)
         pas.add_unique_segment(s)
+    elif N == 8:
+        # Many trajectories.
+        t = Triangle(Point(Fr(1), Fr(1), Fr(0)),
+                     Point(Fr(11), Fr(1), Fr(0)),
+                     Point(Fr(6), Fr(8), Fr(0)))
+        pas = PointsAndSegments()
+        # 1st trajectory
+        pas.add_unique_segment(Segment(Point(Fr(2), Fr(12, 5), Fr(0)),
+                                       Point(Fr(6), Fr(2), Fr(0))))
+        pas.add_unique_segment(Segment(Point(Fr(6), Fr(2), Fr(0)),
+                                       Point(Fr(8), Fr(26, 5), Fr(0))))
+        # 2nd trajectory
+        pas.add_unique_segment(Segment(Point(Fr(8), Fr(1), Fr(0)),
+                                       Point(Fr(19, 2), Fr(31, 10), Fr(0))))
+        # 3rd trajectory
+        pas.add_unique_segment(Segment(Point(Fr(7, 2), Fr(1), Fr(0)),
+                                       Point(Fr(3), Fr(3), Fr(0))))
+        pas.add_unique_segment(Segment(Point(Fr(3), Fr(3), Fr(0)),
+                                       Point(Fr(5), Fr(11, 2), Fr(0))))
+        pas.add_unique_segment(Segment(Point(Fr(5), Fr(11, 2), Fr(0)),
+                                       Point(Fr(7), Fr(33, 5), Fr(0))))
+        # 4th trajectory
+        pas.add_unique_segment(Segment(Point(Fr(4), Fr(26, 5), Fr(0)),
+                                       Point(Fr(5), Fr(7, 2), Fr(0))))
+        pas.add_unique_segment(Segment(Point(Fr(5), Fr(7, 2), Fr(0)),
+                                       Point(Fr(6), Fr(5), Fr(0))))
+        pas.add_unique_segment(Segment(Point(Fr(6), Fr(5), Fr(0)),
+                                       Point(Fr(8), Fr(3), Fr(0))))
+        pas.add_unique_segment(Segment(Point(Fr(8), Fr(3), Fr(0)),
+                                       Point(Fr(7), Fr(1), Fr(0))))
+    elif N == 9:
+        # With points
+        t = Triangle(Point(Fr(1), Fr(0), Fr(0)),
+                     Point(Fr(-1), Fr(0), Fr(0)),
+                     Point(Fr(0), Fr(2), Fr(0)))
+        pas = PointsAndSegments()
+        pas.add_unique_point(Point(Fr(0), Fr(5, 4), Fr(0)))
+        pas.add_unique_point(Point(Fr(1, 3), Fr(1, 3), Fr(0)))
+        pas.add_unique_point(Point(Fr(-1, 3), Fr(1, 3), Fr(0)))
+    elif N == 10:
+        # With points and segment.
+        t = Triangle(Point(Fr(1), Fr(0), Fr(0)),
+                     Point(Fr(-1), Fr(0), Fr(0)),
+                     Point(Fr(0), Fr(2), Fr(0)))
+        pas = PointsAndSegments()
+        pas.add_unique_segment(Segment(Point(Fr(1, 2), Fr(3, 5), Fr(0)),
+                                       Point(Fr(-1, 2), Fr(3, 5), Fr(0))))
+        pas.add_unique_point(Point(Fr(1, 2), Fr(4, 5), Fr(0)))
+        pas.add_unique_point(Point(Fr(1, 2), Fr(2, 5), Fr(0)))
+        pas.add_unique_point(Point(Fr(-1, 2), Fr(4, 5), Fr(0)))
+        pas.add_unique_point(Point(Fr(-1, 2), Fr(2, 5), Fr(0)))
+        pas.add_unique_point(Point(Fr(0), Fr(4, 5), Fr(0)))
+        pas.add_unique_point(Point(Fr(0), Fr(2, 5), Fr(0)))
     else:
         assert False
 
+    #
+    # Final processing.
+    #
+
+    # Add triangle to pas.
+    pas.adds_unique_segments(t.sides)
+    ts = None
+
+    # Triangulate.
     ts = t.triangulate(pas)
-    print(ts)
+
+    # Draw canvas.
     pas.draw(plt, color='orange', linewidth='5', size=60)
-    for ti in ts:
-        ti.draw(plt, color='black', linewidth='1', size=0)
+
+    if not ts is None:
+        for ti in ts:
+            ti.draw(plt, color='black', linewidth='1', size=0)
     plt.show()
 
 #---------------------------------------------------------------------------------------------------
 
 if __name__ == '__main__':
     test()
-    test_triangulation(N=7)
+    test_triangulation(N=10)
 
 #===================================================================================================
